@@ -27,7 +27,20 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <header style={{ padding: "16px", borderBottom: "1px solid #eee" }}>
+          <nav style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+            <a href="/" style={{ fontWeight: 700 }}>Fragrance Community</a>
+            <a href="/library">Library</a>
+            <a href="/learning">Learning</a>
+            <a href="/community">Community</a>
+          </nav>
+        </header>
+
+        <div style={{ padding: "16px" }}>
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
