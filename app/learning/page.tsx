@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 interface Note {
   id: string;
@@ -10,21 +10,46 @@ interface Note {
   createdAt: string;
 }
 
-const categories = ['Olfactory Families', 'Layering', 'Projection', 'Longevity', 'Other'];
+const STORAGE_KEY = "learning-notes";
+
+const categories = [
+  "Olfactory Families",
+  "Layering",
+  "Projection",
+  "Longevity",
+  "Other",
+];
+
+// Read notes from localStorage once, at mount time.
+// Wrapped in try/catch because:
+//   - localStorage can throw in private browsing with strict settings
+//   - JSON.parse throws if the stored data was ever corrupted
+function readStoredNotes(): Note[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? (JSON.parse(saved) as Note[]) : [];
+  } catch {
+    return [];
+  }
+}
 
 export default function LearningPage() {
-  const [notes, setNotes] = useState<Note[]>(() => {
-    if (typeof window === 'undefined') return [];
-    const saved = localStorage.getItem('learning-notes');
-    return saved ? (JSON.parse(saved) as Note[]) : [];
-  });
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  // Lazy initializer: the function passed to useState runs once at mount,
+  // reading localStorage before the first render. No useEffect needed for
+  // the initial load, which also fixes the ESLint set-state-in-effect warning.
+  const [notes, setNotes] = useState<Note[]>(readStoredNotes);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [category, setCategory] = useState(categories[0]);
 
-  // Save to localStorage whenever notes change
+  // Persist to localStorage whenever notes change
   useEffect(() => {
-    localStorage.setItem('learning-notes', JSON.stringify(notes));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+    } catch {
+      // Storage quota exceeded or blocked — notes are still visible in memory
+      // for this session, but won't persist. Silent failure is acceptable here.
+    }
   }, [notes]);
 
   const addNote = () => {
@@ -39,8 +64,8 @@ export default function LearningPage() {
     };
 
     setNotes([newNote, ...notes]);
-    setTitle('');
-    setContent('');
+    setTitle("");
+    setContent("");
   };
 
   const deleteNote = (id: string) => {
@@ -52,7 +77,14 @@ export default function LearningPage() {
       <h1>Learning</h1>
       <p>Notes on olfactory families, layering, projection, longevity, etc.</p>
 
-      <div style={{ marginTop: 24, padding: 16, border: '1px solid #ddd', borderRadius: 8 }}>
+      <div
+        style={{
+          marginTop: 24,
+          padding: 16,
+          border: "1px solid #ddd",
+          borderRadius: 8,
+        }}
+      >
         <h3 style={{ marginTop: 0 }}>Add New Note</h3>
 
         <div style={{ marginBottom: 12 }}>
@@ -62,10 +94,10 @@ export default function LearningPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             style={{
-              width: '100%',
-              padding: '8px 12px',
+              width: "100%",
+              padding: "8px 12px",
               marginBottom: 8,
-              border: '1px solid #ddd',
+              border: "1px solid #ddd",
               borderRadius: 4,
             }}
           />
@@ -76,10 +108,10 @@ export default function LearningPage() {
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             style={{
-              width: '100%',
-              padding: '8px 12px',
+              width: "100%",
+              padding: "8px 12px",
               marginBottom: 8,
-              border: '1px solid #ddd',
+              border: "1px solid #ddd",
               borderRadius: 4,
             }}
           >
@@ -98,11 +130,11 @@ export default function LearningPage() {
             onChange={(e) => setContent(e.target.value)}
             rows={4}
             style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid #ddd',
+              width: "100%",
+              padding: "8px 12px",
+              border: "1px solid #ddd",
               borderRadius: 4,
-              resize: 'vertical',
+              resize: "vertical",
             }}
           />
         </div>
@@ -110,12 +142,12 @@ export default function LearningPage() {
         <button
           onClick={addNote}
           style={{
-            padding: '8px 16px',
-            background: '#222',
-            color: '#fff',
-            border: 'none',
+            padding: "8px 16px",
+            background: "#222",
+            color: "#fff",
+            border: "none",
             borderRadius: 4,
-            cursor: 'pointer',
+            cursor: "pointer",
           }}
         >
           Save Note
@@ -128,41 +160,44 @@ export default function LearningPage() {
         {notes.length === 0 ? (
           <p style={{ opacity: 0.7 }}>No notes yet. Add your first note above!</p>
         ) : (
-          <div style={{ display: 'grid', gap: 12 }}>
+          <div style={{ display: "grid", gap: 12 }}>
             {notes.map((note) => (
-              <div key={note.id} style={{ padding: 16, border: '1px solid #ddd', borderRadius: 8 }}>
+              <div
+                key={note.id}
+                style={{ padding: 16, border: "1px solid #ddd", borderRadius: 8 }}
+              >
                 <div
                   style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
                   }}
                 >
                   <div>
                     <span
                       style={{
                         fontSize: 12,
-                        color: '#666',
-                        background: '#f5f5f5',
-                        padding: '2px 8px',
+                        color: "#666",
+                        background: "#f5f5f5",
+                        padding: "2px 8px",
                         borderRadius: 4,
                       }}
                     >
                       {note.category}
                     </span>
-                    <h3 style={{ margin: '8px 0' }}>{note.title}</h3>
-                    <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{note.content}</p>
-                    <small style={{ color: '#999' }}>
+                    <h3 style={{ margin: "8px 0" }}>{note.title}</h3>
+                    <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{note.content}</p>
+                    <small style={{ color: "#999" }}>
                       {new Date(note.createdAt).toLocaleDateString()}
                     </small>
                   </div>
                   <button
                     onClick={() => deleteNote(note.id)}
                     style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#999',
-                      cursor: 'pointer',
+                      background: "none",
+                      border: "none",
+                      color: "#999",
+                      cursor: "pointer",
                       fontSize: 18,
                     }}
                   >
