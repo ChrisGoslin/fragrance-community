@@ -5,13 +5,16 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
+    // Next.js build output
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Auto-generated PWA service worker files (produced by next-pwa at build time).
+    // Linting these causes ~90 warnings from minified vendored code — not our code.
+    "public/sw.js",
+    "public/workbox-*.js",
   ]),
 ]);
 

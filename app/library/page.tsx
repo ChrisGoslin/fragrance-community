@@ -4,19 +4,9 @@
 // Requires login. Reads/writes to the `fragrances` table in Supabase.
 // Supabase Row Level Security ensures you only see your own entries.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
-
-// Shape of a row from the `fragrances` table
-interface Fragrance {
-  id: string;
-  name: string;
-  brand: string | null;
-  notes: string | null;
-  rating: number | null;
-  is_public: boolean;
-  created_at: string;
-}
+import type { Fragrance } from "@/lib/types";
 
 const STAR_LABELS: Record<number, string> = {
   1: "Weak",
@@ -34,6 +24,7 @@ export default function LibraryPage() {
   // ── Fragrance list ─────────────────────────────────────────────────────────
   const [fragrances, setFragrances] = useState<Fragrance[]>([]);
   const [listLoading, setListLoading] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
 
   // ── Add-fragrance form ─────────────────────────────────────────────────────
   const [name, setName] = useState("");
@@ -52,21 +43,34 @@ export default function LibraryPage() {
     });
   }, []);
 
-  // ── Load fragrances once we know the user is logged in ────────────────────
-  useEffect(() => {
-    if (userId) loadFragrances();
-  }, [userId]);
-
-  async function loadFragrances() {
+  // ── Load fragrances — wrapped in useCallback so the effect dep is stable ──
+  const loadFragrances = useCallback(async () => {
     setListLoading(true);
+    setListError(null);
+
     const { data, error } = await supabase
       .from("fragrances")
-      .select("*")
+      .select("id, user_id, name, brand, notes, rating, is_public, created_at")
       .order("created_at", { ascending: false });
 
-    if (!error) setFragrances(data ?? []);
+    if (error) {
+      // Supabase returns an error object — show the message so the user
+      // knows something went wrong rather than seeing a confusing empty list.
+      setListError(error.message);
+    } else {
+      setFragrances(data ?? []);
+    }
     setListLoading(false);
-  }
+  }, []);
+
+  // ── Load fragrances once we know the user is logged in ────────────────────
+  // The rule below flags this as a synchronous setState-in-effect, but
+  // loadFragrances only calls setState after an await, so it's safe.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (userId) loadFragrances();
+  }, [userId, loadFragrances]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // ── Add a new fragrance ───────────────────────────────────────────────────
   async function handleAdd(e: React.FormEvent) {
@@ -76,38 +80,46 @@ export default function LibraryPage() {
     setSaving(true);
     setFormError(null);
 
-    const { error } = await supabase.from("fragrances").insert({
-      user_id: userId,
-      name: name.trim(),
-      brand: brand.trim() || null,
-      notes: notes.trim() || null,
-      rating,
-      is_public: isPublic,
-    });
+    const { data: inserted, error } = await supabase
+      .from("fragrances")
+      .insert({
+        user_id: userId,
+        name: name.trim(),
+        brand: brand.trim() || null,
+        notes: notes.trim() || null,
+        rating,
+        is_public: isPublic,
+      })
+      .select()
+      .single();
 
     if (error) {
       setFormError(error.message);
     } else {
-      // Reset form and refresh list
+      // Prepend the new item locally — no need for a round-trip to re-fetch
+      // the whole list just to get the row we just inserted.
+      setFragrances((prev) => [inserted as Fragrance, ...prev]);
       setName("");
       setBrand("");
       setNotes("");
       setRating(3);
-      await loadFragrances();
     }
     setSaving(false);
   }
 
   // ── Delete a fragrance ────────────────────────────────────────────────────
   async function handleDelete(id: string) {
-    const { error } = await supabase
-      .from("fragrances")
-      .delete()
-      .eq("id", id);
+    // Optimistic update: remove from UI immediately for a snappy feel.
+    // If the server call fails, we roll back so the item reappears.
+    const previous = fragrances;
+    setFragrances((prev) => prev.filter((f) => f.id !== id));
 
-    if (!error) {
-      // Optimistic update — remove from list immediately
-      setFragrances((prev) => prev.filter((f) => f.id !== id));
+    const { error } = await supabase.from("fragrances").delete().eq("id", id);
+
+    if (error) {
+      // Roll back — restore the list to what it was before the delete
+      setFragrances(previous);
+      setListError(`Delete failed: ${error.message}`);
     }
   }
 
@@ -224,7 +236,9 @@ export default function LibraryPage() {
           </div>
 
           {formError && (
-            <p style={{ color: "red", fontSize: 14 }}>{formError}</p>
+            <p style={{ color: "red", fontSize: 14, marginBottom: 12 }}>
+              ⚠ {formError}
+            </p>
           )}
 
           <button
@@ -251,9 +265,41 @@ export default function LibraryPage() {
           Your collection ({fragrances.length})
         </h2>
 
+        {/* Surface any list errors prominently */}
+        {listError && (
+          <div
+            style={{
+              padding: "12px 16px",
+              background: "#fff3f3",
+              border: "1px solid #ffcccc",
+              borderRadius: 8,
+              marginBottom: 16,
+              fontSize: 14,
+              color: "#c00",
+            }}
+          >
+            <strong>Something went wrong:</strong> {listError}
+            <button
+              onClick={loadFragrances}
+              style={{
+                marginLeft: 12,
+                fontSize: 13,
+                cursor: "pointer",
+                background: "none",
+                border: "1px solid #c00",
+                borderRadius: 4,
+                color: "#c00",
+                padding: "2px 8px",
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {listLoading ? (
           <p style={{ color: "#888" }}>Loading…</p>
-        ) : fragrances.length === 0 ? (
+        ) : fragrances.length === 0 && !listError ? (
           <p style={{ opacity: 0.6 }}>
             Nothing here yet. Add your first fragrance above!
           </p>
