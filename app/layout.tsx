@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import NavBar from "./components/NavBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,16 +34,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <header style={{ padding: "16px", borderBottom: "1px solid #eee" }}>
-          <nav style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-            <a href="/" style={{ fontWeight: 700 }}>Fragrance Community</a>
-            <a href="/library">Library</a>
-            <a href="/learning">Learning</a>
-            <a href="/community">Community</a>
-          </nav>
-        </header>
+        {/* NavBar is a Client Component — it reads live auth state */}
+        <NavBar />
 
-        <div style={{ padding: "16px" }}>
+        <div style={{ padding: "24px 20px" }}>
           {children}
         </div>
       </body>
