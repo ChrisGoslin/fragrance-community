@@ -21,6 +21,8 @@ interface Fragrance {
   inspired_by: string | null;
 }
 
+type Reaction = "liked" | "disliked" | "unworn" | null;
+
 interface CollectionItem {
   id: string;
   fragrance_id: string;
@@ -29,8 +31,15 @@ interface CollectionItem {
   shelf_tier: number;
   affinity_score: number;
   personal_notes: string | null;
+  reaction: Reaction;
   fragrance: Fragrance;
 }
+
+const STAMPS: { value: "liked" | "disliked" | "unworn"; label: string; emoji: string; activeStyle: React.CSSProperties }[] = [
+  { value: "liked",    label: "Like",        emoji: "❤️", activeStyle: { background: "#fff1f2", borderColor: "#fb7185", color: "#e11d48" } },
+  { value: "disliked", label: "Dislike",     emoji: "👎", activeStyle: { background: "#f3f4f6", borderColor: "#6b7280", color: "#374151" } },
+  { value: "unworn",   label: "Haven't worn", emoji: "🤍", activeStyle: { background: "#eff6ff", borderColor: "#93c5fd", color: "#3b82f6" } },
+];
 
 const STATUS_LABELS: Record<string, string> = {
   owned: "Owned",
@@ -96,6 +105,7 @@ export default function LibraryPage() {
   );
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterTier, setFilterTier] = useState<number>(0);
+  const [reactions, setReactions] = useState<Record<string, Reaction>>({});
   const [adding, setAdding] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,7 +134,12 @@ export default function LibraryPage() {
       .eq("user_id", userId)
       .order("shelf_tier", { ascending: true });
 
-    if (!error && data) setCollection(data as CollectionItem[]);
+    if (!error && data) {
+      setCollection(data as CollectionItem[]);
+      const map: Record<string, Reaction> = {};
+      (data as CollectionItem[]).forEach(item => { map[item.fragrance_id] = item.reaction; });
+      setReactions(map);
+    }
     setLoading(false);
   }, [userId]);
 
@@ -216,6 +231,27 @@ export default function LibraryPage() {
           item.id === id ? { ...item, ...updates } as CollectionItem : item
         )
       );
+    }
+  }
+
+  // ── Stamp reaction ───────────────────────────────────────────────────────
+
+  async function handleStamp(fragranceId: string, stamp: "liked" | "disliked" | "unworn") {
+    if (!userId) return;
+    const current = reactions[fragranceId] ?? null;
+    const next: Reaction = current === stamp ? null : stamp;
+
+    setReactions(prev => ({ ...prev, [fragranceId]: next }));
+
+    const { error } = await supabase
+      .from("collections")
+      .upsert(
+        { user_id: userId, fragrance_id: fragranceId, reaction: next },
+        { onConflict: "user_id,fragrance_id" }
+      );
+
+    if (error) {
+      setReactions(prev => ({ ...prev, [fragranceId]: current }));
     }
   }
 
@@ -380,11 +416,13 @@ export default function LibraryPage() {
                   key={item.id}
                   item={item}
                   expanded={expandedId === item.id}
+                  reaction={reactions[item.fragrance_id] ?? null}
                   onToggle={() =>
                     setExpandedId(expandedId === item.id ? null : item.id)
                   }
                   onUpdate={updateItem}
                   onRemove={removeFromCollection}
+                  onStamp={handleStamp}
                 />
               ))}
             </div>
@@ -479,6 +517,26 @@ export default function LibraryPage() {
                         )}
                       </div>
                     </div>
+                    {/* Stamps */}
+                    <div style={styles.stampRow}>
+                      {STAMPS.map(stamp => {
+                        const isActive = reactions[f.id] === stamp.value;
+                        return (
+                          <button
+                            key={stamp.value}
+                            title={stamp.label}
+                            onClick={() => handleStamp(f.id, stamp.value)}
+                            style={{
+                              ...styles.stampBtn,
+                              ...(isActive ? stamp.activeStyle : {}),
+                            }}
+                          >
+                            {stamp.emoji}
+                          </button>
+                        );
+                      })}
+                    </div>
+
                     {/* Note pyramid preview */}
                     <div style={styles.pyramid}>
                       {f.top_notes?.length > 0 && (
@@ -525,15 +583,19 @@ export default function LibraryPage() {
 function CollectionCard({
   item,
   expanded,
+  reaction,
   onToggle,
   onUpdate,
   onRemove,
+  onStamp,
 }: {
   item: CollectionItem;
   expanded: boolean;
+  reaction: Reaction;
   onToggle: () => void;
   onUpdate: (id: string, updates: Record<string, unknown>) => void;
   onRemove: (id: string, name: string) => void;
+  onStamp: (fragranceId: string, stamp: "liked" | "disliked" | "unworn") => void;
 }) {
   const f = item.fragrance;
   const [notes, setNotes] = useState(item.personal_notes ?? "");
@@ -671,6 +733,26 @@ function CollectionCard({
           </div>
 
           {/* Remove */}
+          {/* Stamps */}
+          <div style={{ ...styles.stampRow, marginTop: 12 }}>
+            {STAMPS.map(stamp => {
+              const isActive = reaction === stamp.value;
+              return (
+                <button
+                  key={stamp.value}
+                  title={stamp.label}
+                  onClick={() => onStamp(item.fragrance_id, stamp.value)}
+                  style={{
+                    ...styles.stampBtn,
+                    ...(isActive ? stamp.activeStyle : {}),
+                  }}
+                >
+                  {stamp.emoji} {stamp.label}
+                </button>
+              );
+            })}
+          </div>
+
           <button
             style={styles.removeButton}
             onClick={() => onRemove(item.id, f.name)}
@@ -942,6 +1024,21 @@ const styles: Record<string, React.CSSProperties> = {
   emptyIcon: { fontSize: 40 },
   emptyTitle: { fontSize: 18, fontWeight: 600, margin: 0, color: "#111" },
   emptyText: { fontSize: 14, color: "#6b7280", margin: 0, maxWidth: 320 },
+  stampRow: {
+    display: "flex",
+    gap: 6,
+    flexWrap: "wrap" as const,
+  },
+  stampBtn: {
+    padding: "5px 10px",
+    border: "1px solid #e5e7eb",
+    borderRadius: 20,
+    background: "white",
+    color: "#9ca3af",
+    fontSize: 12,
+    cursor: "pointer",
+    transition: "all 0.15s",
+  },
   toast: {
     position: "fixed",
     bottom: 24,
