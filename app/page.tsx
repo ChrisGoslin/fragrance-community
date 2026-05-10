@@ -11,15 +11,19 @@ export default function Home() {
   const [userName, setUserName] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }: { data: { session: Session | null } }) => {
-      if (!session) return;
-      setUserName(session.user.email?.split("@")[0] ?? null);
-      const { count } = await supabase
-        .from("collections")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", session.user.id);
-      setCollectionCount(count ?? 0);
-    });
+    supabase.auth.getSession()
+      .then(async ({ data: { session } }: { data: { session: Session | null } }) => {
+        if (!session) return;
+        setUserName(session.user.email?.split("@")[0] ?? null);
+        const { count } = await supabase
+          .from("collections")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", session.user.id);
+        setCollectionCount(count ?? 0);
+      })
+      .catch(() => {
+        // session unavailable — homepage renders without personalisation
+      });
   }, []);
 
   const nav = [

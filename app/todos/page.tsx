@@ -4,7 +4,8 @@ import { cookies } from 'next/headers'
 export default async function TodosPage() {
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
-  const { data: todos } = await supabase.from('todos').select()
+  const { data: todos, error } = await supabase.from('todos').select()
+  if (error) console.error('todos fetch error:', error.message)
 
   return (
     <main style={{ padding: 24, fontFamily: 'system-ui' }}>

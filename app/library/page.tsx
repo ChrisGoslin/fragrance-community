@@ -156,6 +156,9 @@ export default function LibraryPage() {
       .order("brand")
       .then(({ data }: { data: Fragrance[] | null }) => {
         if (data) setFragrances(data);
+      })
+      .catch(() => {
+        // fragrance catalogue unavailable — search tab will show empty state
       });
   }, []);
 

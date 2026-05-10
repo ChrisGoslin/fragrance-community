@@ -21,17 +21,24 @@ export default function LearningPage() {
 
   // Load from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem("learning-notes");
-    if (saved) {
-      setNotes(JSON.parse(saved));
+    try {
+      const saved = localStorage.getItem("learning-notes");
+      if (saved) {
+        setNotes(JSON.parse(saved));
+      }
+    } catch {
+      // corrupted or unavailable storage — start fresh
     }
     setIsLoaded(true);
   }, []);
 
   // Save to localStorage when notes change
   useEffect(() => {
-    if (isLoaded) {
+    if (!isLoaded) return;
+    try {
       localStorage.setItem("learning-notes", JSON.stringify(notes));
+    } catch {
+      // storage quota exceeded or unavailable — changes not persisted
     }
   }, [notes, isLoaded]);
 
