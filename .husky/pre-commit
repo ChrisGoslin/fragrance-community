@@ -1,0 +1,11 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 Type checking..."
+npm run type-check || exit 1
+
+echo "📝 Formatting code..."
+npx prettier --write .
+
+echo "✨ Linting (warnings only)..."
+npm run lint || true
