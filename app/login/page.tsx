@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 
 const supabase = createClient();
@@ -8,7 +9,7 @@ const supabase = createClient();
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<string | null>(null);
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,7 +25,7 @@ export default function LoginPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function signIn(e: React.SubmitEvent<HTMLFormElement>) {
+  async function signIn(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("Sending link…");
 

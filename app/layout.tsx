@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,10 +36,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <header style={{ padding: "16px", borderBottom: "1px solid #eee" }}>
           <nav style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-            <a href="/" style={{ fontWeight: 700 }}>Fragrance Community</a>
-            <a href="/library">Library</a>
-            <a href="/learning">Learning</a>
-            <a href="/community">Community</a>
+            <Link href="/" style={{ fontWeight: 700 }}>Fragrance Community</Link>
+            <Link href="/library">Library</Link>
+            <Link href="/learning">Learning</Link>
+            <Link href="/community">Community</Link>
           </nav>
         </header>
 

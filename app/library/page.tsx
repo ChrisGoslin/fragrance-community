@@ -99,7 +99,6 @@ export default function LibraryPage() {
   const [collection, setCollection] = useState<CollectionItem[]>([]);
   const [fragrances, setFragrances] = useState<Fragrance[]>([]);
   const [search, setSearch] = useState("");
-  const [searchResults, setSearchResults] = useState<Fragrance[]>([]);
   const [activeTab, setActiveTab] = useState<"collection" | "search">(
     "collection"
   );
@@ -143,9 +142,8 @@ export default function LibraryPage() {
     setLoading(false);
   }, [userId]);
 
-  useEffect(() => {
-    loadCollection();
-  }, [loadCollection]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { loadCollection(); }, [loadCollection]);
 
   // ── Load all fragrances for search ───────────────────────────────────────
 
@@ -159,24 +157,19 @@ export default function LibraryPage() {
       });
   }, []);
 
-  // ── Search ───────────────────────────────────────────────────────────────
+  // ── Search (derived — no effect needed) ─────────────────────────────────
 
-  useEffect(() => {
-    if (!search.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    const q = search.toLowerCase();
-    const results = fragrances.filter(
-      (f) =>
-        f.brand.toLowerCase().includes(q) ||
-        f.name.toLowerCase().includes(q) ||
-        f.primary_vector?.toLowerCase().includes(q) ||
-        f.dominant_accords?.some((a) => a.toLowerCase().includes(q)) ||
-        f.inspired_by?.toLowerCase().includes(q)
-    );
-    setSearchResults(results);
-  }, [search, fragrances]);
+  const q = search.toLowerCase();
+  const searchResults = search.trim()
+    ? fragrances.filter(
+        (f) =>
+          f.brand.toLowerCase().includes(q) ||
+          f.name.toLowerCase().includes(q) ||
+          f.primary_vector?.toLowerCase().includes(q) ||
+          f.dominant_accords?.some((a) => a.toLowerCase().includes(q)) ||
+          f.inspired_by?.toLowerCase().includes(q)
+      )
+    : [];
 
   // ── Add to collection ────────────────────────────────────────────────────
 

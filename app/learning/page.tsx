@@ -13,27 +13,19 @@ interface Note {
 const categories = ["Olfactory Families", "Layering", "Projection", "Longevity", "Other"];
 
 export default function LearningPage() {
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [notes, setNotes] = useState<Note[]>(() => {
+    if (typeof window === "undefined") return [];
+    const saved = localStorage.getItem("learning-notes");
+    return saved ? (JSON.parse(saved) as Note[]) : [];
+  });
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState(categories[0]);
-  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on mount
+  // Save to localStorage whenever notes change
   useEffect(() => {
-    const saved = localStorage.getItem("learning-notes");
-    if (saved) {
-      setNotes(JSON.parse(saved));
-    }
-    setIsLoaded(true);
-  }, []);
-
-  // Save to localStorage when notes change
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem("learning-notes", JSON.stringify(notes));
-    }
-  }, [notes, isLoaded]);
+    localStorage.setItem("learning-notes", JSON.stringify(notes));
+  }, [notes]);
 
   const addNote = () => {
     if (!title.trim() || !content.trim()) return;

@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Ignore Claude Code worktrees and agent directories
+    ".claude/**",
+    ".agents/**",
+    // Ignore generated public assets (service worker, workbox)
+    "public/sw.js",
+    "public/workbox-*.js",
   ]),
 ]);
 
