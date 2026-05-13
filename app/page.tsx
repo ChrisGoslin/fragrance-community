@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 
@@ -9,15 +10,20 @@ const supabase = createClient();
 export default function Home() {
   const [collectionCount, setCollectionCount] = useState<number | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [collectionError, setCollectionError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }: { data: { session: Session | null } }) => {
       if (!session) return;
       setUserName(session.user.email?.split("@")[0] ?? null);
-      const { count } = await supabase
+      const { count, error } = await supabase
         .from("collections")
         .select("*", { count: "exact", head: true })
         .eq("user_id", session.user.id);
+      if (error) {
+        setCollectionError("Could not load collection count right now.");
+        return;
+      }
       setCollectionCount(count ?? 0);
     });
   }, []);
@@ -44,15 +50,18 @@ export default function Home() {
 
       <div style={styles.grid}>
         {nav.map((item) => (
-          <a key={item.href} href={item.href} style={styles.card}>
+          <Link key={item.href} href={item.href} style={styles.card}>
             <span style={styles.cardEmoji}>{item.emoji}</span>
             <div>
               <div style={styles.cardLabel}>{item.label}</div>
               <div style={styles.cardDesc}>{item.desc}</div>
             </div>
-          </a>
+          </Link>
         ))}
       </div>
+      {collectionError ? (
+        <p style={styles.errorText} role="status">{collectionError}</p>
+      ) : null}
     </main>
   );
 }
@@ -83,4 +92,5 @@ const styles: Record<string, React.CSSProperties> = {
   cardEmoji: { fontSize: 28 },
   cardLabel: { fontSize: 16, fontWeight: 600, color: "#111" },
   cardDesc: { fontSize: 13, color: "#6b7280", marginTop: 2 },
+  errorText: { marginTop: 14, fontSize: 13, color: "#b91c1c" },
 };

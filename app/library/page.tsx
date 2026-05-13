@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
@@ -109,6 +110,7 @@ export default function LibraryPage() {
   const [adding, setAdding] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   // ── Auth ─────────────────────────────────────────────────────────────────
@@ -128,6 +130,7 @@ export default function LibraryPage() {
   const loadCollection = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
+    setLoadingError(null);
     const { data, error } = await supabase
       .from("collections")
       .select(`*, fragrance:fragrances(*)`)
@@ -139,6 +142,8 @@ export default function LibraryPage() {
       const map: Record<string, Reaction> = {};
       (data as CollectionItem[]).forEach(item => { map[item.fragrance_id] = item.reaction; });
       setReactions(map);
+    } else if (error) {
+      setLoadingError("Couldn't load your collection. Please try again.");
     }
     setLoading(false);
   }, [userId]);
@@ -297,9 +302,9 @@ export default function LibraryPage() {
           <p style={styles.emptyText}>
             Your fragrance collection lives here.
           </p>
-          <a href="/login" style={styles.primaryButton}>
+          <Link href="/login" style={styles.primaryButton}>
             Sign in
-          </a>
+          </Link>
         </div>
       </main>
     );
@@ -386,6 +391,13 @@ export default function LibraryPage() {
           {loading ? (
             <div style={styles.emptyState}>
               <p style={styles.emptyText}>Loading your collection…</p>
+            </div>
+          ) : loadingError ? (
+            <div style={styles.emptyState}>
+              <p style={styles.errorText} role="status">{loadingError}</p>
+              <button style={styles.primaryButton} onClick={() => loadCollection()}>
+                Retry
+              </button>
             </div>
           ) : filtered.length === 0 ? (
             <div style={styles.emptyState}>
@@ -525,6 +537,8 @@ export default function LibraryPage() {
                           <button
                             key={stamp.value}
                             title={stamp.label}
+                            aria-label={stamp.label}
+                            aria-pressed={isActive}
                             onClick={() => handleStamp(f.id, stamp.value)}
                             style={{
                               ...styles.stampBtn,
@@ -741,6 +755,8 @@ function CollectionCard({
                 <button
                   key={stamp.value}
                   title={stamp.label}
+                  aria-label={stamp.label}
+                  aria-pressed={isActive}
                   onClick={() => onStamp(item.fragrance_id, stamp.value)}
                   style={{
                     ...styles.stampBtn,
@@ -1024,6 +1040,7 @@ const styles: Record<string, React.CSSProperties> = {
   emptyIcon: { fontSize: 40 },
   emptyTitle: { fontSize: 18, fontWeight: 600, margin: 0, color: "#111" },
   emptyText: { fontSize: 14, color: "#6b7280", margin: 0, maxWidth: 320 },
+  errorText: { fontSize: 14, color: "#b91c1c", margin: 0, maxWidth: 320 },
   stampRow: {
     display: "flex",
     gap: 6,

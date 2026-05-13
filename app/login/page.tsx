@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -26,6 +27,7 @@ export default function LoginPage() {
 
   async function signIn(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+    setSubmitting(true);
     setStatus("Sending link…");
 
     const { error } = await supabase.auth.signInWithOtp({
@@ -34,6 +36,7 @@ export default function LoginPage() {
     });
 
     setStatus(error ? error.message : "Check your email for the login link.");
+    setSubmitting(false);
   }
 
   async function signOut() {
@@ -58,16 +61,20 @@ export default function LoginPage() {
     <main>
       <h1>Login</h1>
       <form onSubmit={signIn}>
+        <label htmlFor="email-input">Email</label>
         <input
+          id="email-input"
           type="email"
           placeholder="you@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <button type="submit">Send magic link</button>
+        <button type="submit" disabled={submitting}>
+          {submitting ? "Sending..." : "Send magic link"}
+        </button>
       </form>
-      {status ? <p>{status}</p> : null}
+      {status ? <p role="status">{status}</p> : null}
     </main>
   );
 }
