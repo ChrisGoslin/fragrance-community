@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 
+const supabase = createClient()
+
 type Fragrance = {
   id: string
   brand: string
@@ -29,7 +31,6 @@ const STAMPS: { value: 'liked' | 'disliked' | 'unworn'; label: string; emoji: st
 export default function FragranceGrid({ fragrances, initialReactions, userId }: Props) {
   const [reactions, setReactions] = useState<Record<string, Reaction>>(initialReactions)
   const [loading, setLoading] = useState<string | null>(null)
-  const supabase = createClient()
 
   async function handleStamp(fragranceId: string, stamp: 'liked' | 'disliked' | 'unworn') {
     const current = reactions[fragranceId] ?? null
