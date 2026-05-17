@@ -194,7 +194,9 @@ export default function LibraryPage() {
         }
         setLoading(false);
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [userId]);
 
   // ── Load all fragrances for search ───────────────────────────────────────

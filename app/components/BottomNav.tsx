@@ -97,7 +97,9 @@ export default function BottomNav() {
               className="flex flex-col items-center gap-1 flex-1 py-2 rounded-lg transition-colors"
             >
               {item.icon(active)}
-              <span className={`text-xs font-medium ${active ? 'text-amber-400' : 'text-slate-500'}`}>
+              <span
+                className={`text-xs font-medium ${active ? 'text-amber-400' : 'text-slate-500'}`}
+              >
                 {item.label}
               </span>
             </Link>

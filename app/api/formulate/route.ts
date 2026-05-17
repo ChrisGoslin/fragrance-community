@@ -7,8 +7,8 @@
 // Requires: ANTHROPIC_API_KEY in .env.local
 // Install: npm install @anthropic-ai/sdk
 
-import { NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { NextResponse } from 'next/server';
+import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -31,9 +31,9 @@ type FormulateRequest = {
   fragrance1: FragranceInput;
   fragrance2: FragranceInput;
   context: {
-    time_of_day: string;      // "morning" | "afternoon" | "evening" | "night"
-    weather: string;          // "cold" | "cool" | "warm" | "hot"
-    occasion: string;         // "daily" | "work" | "date" | "formal" | "casual"
+    time_of_day: string; // "morning" | "afternoon" | "evening" | "night"
+    weather: string; // "cold" | "cool" | "warm" | "hot"
+    occasion: string; // "daily" | "work" | "date" | "formal" | "casual"
   };
 };
 
@@ -66,9 +66,8 @@ function buildUserPrompt(req: FormulateRequest): string {
   const { fragrance1, fragrance2, context } = req;
 
   // Determine order: Phase 1 first, then Phase 2/3
-  const [anchor, top] = fragrance1.phase <= fragrance2.phase
-    ? [fragrance1, fragrance2]
-    : [fragrance2, fragrance1];
+  const [anchor, top] =
+    fragrance1.phase <= fragrance2.phase ? [fragrance1, fragrance2] : [fragrance2, fragrance1];
 
   return `Generate a Formulate result for this layering combination:
 
@@ -121,25 +120,25 @@ export async function POST(req: Request) {
 
     if (!body.fragrance1 || !body.fragrance2) {
       return NextResponse.json(
-        { error: "fragrance1 and fragrance2 are required" },
+        { error: 'fragrance1 and fragrance2 are required' },
         { status: 400 }
       );
     }
 
     // Default context if not provided
     const context = body.context ?? {
-      time_of_day: "evening",
-      weather: "cool",
-      occasion: "casual",
+      time_of_day: 'evening',
+      weather: 'cool',
+      occasion: 'casual',
     };
 
     const message = await client.messages.create({
-      model: "claude-haiku-4-5",
+      model: 'claude-haiku-4-5',
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: buildUserPrompt({ ...body, context }),
         },
       ],
@@ -147,8 +146,8 @@ export async function POST(req: Request) {
 
     // Extract text content from response
     const content = message.content[0];
-    if (content.type !== "text") {
-      throw new Error("Unexpected response type from Claude");
+    if (content.type !== 'text') {
+      throw new Error('Unexpected response type from Claude');
     }
 
     // Parse JSON response
@@ -157,9 +156,9 @@ export async function POST(req: Request) {
       result = JSON.parse(content.text);
     } catch {
       // If JSON parse fails, return the raw text for debugging
-      console.error("Failed to parse Claude response as JSON:", content.text);
+      console.error('Failed to parse Claude response as JSON:', content.text);
       return NextResponse.json(
-        { error: "Failed to parse AI response", raw: content.text },
+        { error: 'Failed to parse AI response', raw: content.text },
         { status: 500 }
       );
     }
@@ -170,9 +169,9 @@ export async function POST(req: Request) {
       tokens_used: message.usage.input_tokens + message.usage.output_tokens,
     });
   } catch (error) {
-    console.error("Formulate route error:", error);
+    console.error('Formulate route error:', error);
     return NextResponse.json(
-      { error: "Internal server error", details: String(error) },
+      { error: 'Internal server error', details: String(error) },
       { status: 500 }
     );
   }

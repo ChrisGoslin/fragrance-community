@@ -1,12 +1,12 @@
-import { cookies } from 'next/headers'
-import { createClient } from '@/utils/supabase/server'
-import LayeringClient from './LayeringClient'
+import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
+import LayeringClient from './LayeringClient';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export default async function LayeringPage() {
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
 
   const [{ data: fragrances }, { data: protocols }] = await Promise.all([
     supabase
@@ -16,7 +16,7 @@ export default async function LayeringPage() {
       )
       .order('brand'),
     supabase.from('layering_protocols').select('*').order('created_at'),
-  ])
+  ]);
 
-  return <LayeringClient fragrances={fragrances ?? []} protocols={protocols ?? []} />
+  return <LayeringClient fragrances={fragrances ?? []} protocols={protocols ?? []} />;
 }

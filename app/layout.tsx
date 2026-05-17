@@ -64,7 +64,9 @@ export default function RootLayout({
           </nav>
         </header>
 
-        <main className="pb-20 md:pb-0" style={{ padding: '16px' }}>{children}</main>
+        <main className="pb-20 md:pb-0" style={{ padding: '16px' }}>
+          {children}
+        </main>
         <div className="md:hidden">
           <BottomNav />
         </div>
