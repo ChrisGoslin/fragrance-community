@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import type { Session } from '@supabase/supabase-js';
 
-const supabase = createClient();
-
 export default function Home() {
   const [collectionCount, setCollectionCount] = useState<number | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [collectionError, setCollectionError] = useState<string | null>(null);
 
   useEffect(() => {
+    const supabase = createClient();
+
     supabase.auth
       .getSession()
       .then(async ({ data: { session } }: { data: { session: Session | null } }) => {

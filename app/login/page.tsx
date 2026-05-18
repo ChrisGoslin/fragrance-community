@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { createClient } from '@/utils/supabase/client';
 
-const supabase = createClient();
-
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<string | null>(null);
@@ -14,6 +12,8 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    const supabase = createClient();
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
@@ -30,6 +30,7 @@ export default function LoginPage() {
 
   async function signIn(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const supabase = createClient();
     setSubmitting(true);
     setStatus('Sending link…');
 
@@ -50,6 +51,7 @@ export default function LoginPage() {
   }
 
   async function signOut() {
+    const supabase = createClient();
     await supabase.auth.signOut();
   }
 

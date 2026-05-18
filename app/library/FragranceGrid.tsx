@@ -49,9 +49,9 @@ const STAMPS: {
 export default function FragranceGrid({ fragrances, initialReactions, userId }: Props) {
   const [reactions, setReactions] = useState<Record<string, Reaction>>(initialReactions);
   const [loading, setLoading] = useState<string | null>(null);
-  const supabase = createClient();
 
   async function handleStamp(fragranceId: string, stamp: 'liked' | 'disliked' | 'unworn') {
+    const supabase = createClient();
     const current = reactions[fragranceId] ?? null;
     const next: Reaction = current === stamp ? null : stamp;
 

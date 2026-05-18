@@ -110,7 +110,8 @@ function PairingCard({
             aria-label={`Rating: ${fragrance.rating} out of 10`}
             className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded"
           >
-            <span aria-hidden="true">★ </span>{fragrance.rating}
+            <span aria-hidden="true">★ </span>
+            {fragrance.rating}
           </span>
         )}
       </div>
@@ -175,7 +176,8 @@ function ProtocolCard({ protocol, highlighted }: { protocol: Protocol; highlight
 
       {protocol.anosmia_warning && (
         <p className="text-xs bg-red-950 text-red-300 border border-red-800 rounded px-3 py-2 mb-2">
-          <span aria-hidden="true">⚠ </span>{protocol.anosmia_warning}
+          <span aria-hidden="true">⚠ </span>
+          {protocol.anosmia_warning}
         </p>
       )}
       {protocol.application_note && (
@@ -406,7 +408,12 @@ export default function LayeringClient({
                 <p className="text-sm font-semibold text-white">{selectedFragrance.name}</p>
                 <PhaseBadge phase={selectedFragrance.phase} />
               </div>
-              <div aria-hidden="true" className="flex items-center text-slate-400 text-xl font-light">+</div>
+              <div
+                aria-hidden="true"
+                className="flex items-center text-slate-400 text-xl font-light"
+              >
+                +
+              </div>
               <div className="flex-1 min-w-[160px] bg-slate-900 rounded-xl p-3 border border-slate-700">
                 <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Layer 2</p>
                 <p className="text-xs text-slate-400">{selectedPairing.brand}</p>
@@ -484,7 +491,10 @@ export default function LayeringClient({
 
                 {formulateResult.anosmia_warning && (
                   <div className="p-3 bg-red-950/40 border border-red-800/40 rounded-lg">
-                    <p className="text-xs text-red-400"><span aria-hidden="true">⚠ </span>{formulateResult.anosmia_warning}</p>
+                    <p className="text-xs text-red-400">
+                      <span aria-hidden="true">⚠ </span>
+                      {formulateResult.anosmia_warning}
+                    </p>
                   </div>
                 )}
 

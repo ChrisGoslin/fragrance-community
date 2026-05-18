@@ -10,10 +10,6 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
-
 type FragranceInput = {
   name: string;
   brand: string;
@@ -114,8 +110,32 @@ Respond with this exact JSON structure:
 }`;
 }
 
+function parseJsonObject(text: string) {
+  const trimmed = text.trim();
+  const fencedMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  const candidate = fencedMatch?.[1]?.trim() ?? trimmed;
+
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    const start = candidate.indexOf('{');
+    const end = candidate.lastIndexOf('}');
+    if (start === -1 || end === -1 || end <= start) throw new Error('No JSON object found');
+    return JSON.parse(candidate.slice(start, end + 1));
+  }
+}
+
 export async function POST(req: Request) {
   try {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'Formulate is not configured yet. Missing ANTHROPIC_API_KEY.' },
+        { status: 500 }
+      );
+    }
+
+    const client = new Anthropic({ apiKey });
     const body: FormulateRequest = await req.json();
 
     if (!body.fragrance1 || !body.fragrance2) {
@@ -153,14 +173,10 @@ export async function POST(req: Request) {
     // Parse JSON response
     let result;
     try {
-      result = JSON.parse(content.text);
+      result = parseJsonObject(content.text);
     } catch {
-      // If JSON parse fails, return the raw text for debugging
       console.error('Failed to parse Claude response as JSON:', content.text);
-      return NextResponse.json(
-        { error: 'Failed to parse AI response', raw: content.text },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -170,9 +186,6 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error('Formulate route error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: String(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
