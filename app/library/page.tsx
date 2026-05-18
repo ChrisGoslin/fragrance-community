@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
-const supabase = createClient();
-
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface Fragrance {
@@ -114,6 +112,7 @@ function vectorTextColor(vector: string): string {
 // ── Main component ───────────────────────────────────────────────────────────
 
 export default function LibraryPage() {
+  const supabase = createClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [collection, setCollection] = useState<CollectionItem[]>([]);
   const [fragrances, setFragrances] = useState<Fragrance[]>([]);
@@ -194,7 +193,9 @@ export default function LibraryPage() {
         }
         setLoading(false);
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [userId]);
 
   // ── Load all fragrances for search ───────────────────────────────────────
