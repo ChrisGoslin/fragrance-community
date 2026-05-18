@@ -7,8 +7,10 @@
 // Requires: ANTHROPIC_API_KEY in .env.local
 // Install: npm install @anthropic-ai/sdk
 
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { createClient } from '@/utils/supabase/server';
 
 type FragranceInput = {
   name: string;
@@ -18,7 +20,7 @@ type FragranceInput = {
   family: string;
   projection: string;
   application_zone: string;
-  application_method: string;
+  application_method?: string; // optional — not all rows have this column yet
   anosmia_risk: string;
   lean: string;
 };
@@ -74,7 +76,7 @@ FRAGRANCE A (apply first):
 - Olfactory Family: ${anchor.family}
 - Projection: ${anchor.projection}
 - Application Zone: ${anchor.application_zone}
-- Application Method: ${anchor.application_method}
+- Application Method: ${anchor.application_method ?? 'standard spray'}
 - Anosmia Risk: ${anchor.anosmia_risk}
 - Lean: ${anchor.lean}
 
@@ -127,6 +129,16 @@ function parseJsonObject(text: string) {
 
 export async function POST(req: Request) {
   try {
+    // Auth guard — only signed-in users can call this paid AI endpoint
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json(

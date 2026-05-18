@@ -12,6 +12,7 @@ type Fragrance = {
   phase_label: string | null;
   family: string | null;
   application_zone: string | null;
+  application_method: string | null;
   anosmia_risk: 'High' | 'Medium' | 'Low' | null;
   rating: number | null;
   projection: string | null;

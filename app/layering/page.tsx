@@ -12,7 +12,7 @@ export default async function LayeringPage() {
     supabase
       .from('fragrances')
       .select(
-        'id, brand, name, phase, phase_label, family, application_zone, anosmia_risk, rating, projection, lean'
+        'id, brand, name, phase, phase_label, family, application_zone, application_method, anosmia_risk, rating, projection, lean'
       )
       .order('brand'),
     supabase.from('layering_protocols').select('*').order('created_at'),
