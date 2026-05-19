@@ -12,6 +12,27 @@ import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/utils/supabase/server';
 
+// ── Rate limiting ─────────────────────────────────────────────────────────────
+// Simple in-memory limiter: 10 Formulate calls per user per minute.
+// This is per-serverless-instance — not globally persistent.
+// For production, replace with a persistent store (e.g. Upstash Redis, Supabase).
+const RATE_LIMIT_RPM = 10;
+const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const windowMs = 60_000;
+  const entry = rateLimitMap.get(userId);
+
+  if (!entry || now - entry.windowStart > windowMs) {
+    rateLimitMap.set(userId, { count: 1, windowStart: now });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_RPM) return false;
+  entry.count++;
+  return true;
+}
+
 type FragranceInput = {
   name: string;
   brand: string;
@@ -87,7 +108,7 @@ FRAGRANCE B (apply second):
 - Olfactory Family: ${top.family}
 - Projection: ${top.projection}
 - Application Zone: ${top.application_zone}
-- Application Method: ${top.application_method}
+- Application Method: ${top.application_method ?? 'standard spray'}
 - Anosmia Risk: ${top.anosmia_risk}
 - Lean: ${top.lean}
 
@@ -137,6 +158,14 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Rate limit — prevents authenticated users from burning API credits at scale
+    if (!checkRateLimit(user.id)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment before formulating again.' },
+        { status: 429 }
+      );
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
