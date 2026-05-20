@@ -116,7 +116,7 @@ export default function LibraryPage() {
   const [collection, setCollection] = useState<CollectionItem[]>([]);
   const [fragrances, setFragrances] = useState<Fragrance[]>([]);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'collection' | 'search'>('collection');
+  const [activeTab, setActiveTab] = useState<'collection' | 'search' | 'scan'>('collection');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterTier, setFilterTier] = useState<number>(0);
   const [reactions, setReactions] = useState<Record<string, Reaction>>({});
@@ -383,6 +383,12 @@ export default function LibraryPage() {
         >
           Search & add
         </button>
+        <button
+          style={activeTab === 'scan' ? styles.tabActive : styles.tab}
+          onClick={() => setActiveTab('scan')}
+        >
+          📸 Scan bottle
+        </button>
       </div>
 
       {/* ── COLLECTION TAB ── */}
@@ -600,9 +606,226 @@ export default function LibraryPage() {
         </div>
       )}
 
+      {/* ── SCAN TAB ── */}
+      {activeTab === 'scan' && (
+        <ScanTab
+          fragrances={fragrances}
+          onAdd={(fragrance, status) => addToCollection(fragrance, status)}
+        />
+      )}
+
       {/* Toast */}
       {toast && <div style={styles.toast}>{toast}</div>}
     </main>
+  );
+}
+
+// ── Scan tab ─────────────────────────────────────────────────────────────────
+// Point camera at a bottle → Claude identifies brand + name → confirm + add.
+
+type ScanResult = {
+  brand: string;
+  name: string;
+  concentration: string;
+  confidence: number;
+  notes: string;
+};
+
+function ScanTab({
+  fragrances,
+  onAdd,
+}: {
+  fragrances: Fragrance[];
+  onAdd: (fragrance: Fragrance, status: 'owned' | 'wishlist') => void;
+}) {
+  const [scanning, setScanning] = useState(false);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [matched, setMatched] = useState<Fragrance | null>(null);
+
+  async function handleImage(file: File) {
+    setScanning(true);
+    setScanResult(null);
+    setScanError(null);
+    setMatched(null);
+
+    try {
+      // Convert to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Strip the data URL prefix (e.g. "data:image/jpeg;base64,")
+          resolve(result.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const mediaType = file.type as 'image/jpeg' | 'image/png' | 'image/webp';
+
+      const res = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_base64: base64, media_type: mediaType }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Scan failed');
+
+      setScanResult(data as ScanResult);
+
+      // Try to match against catalogue
+      const nameLower = (data.name as string).toLowerCase();
+      const brandLower = (data.brand as string).toLowerCase();
+      const catalogueMatch = fragrances.find(
+        (f) =>
+          f.name.toLowerCase().includes(nameLower) ||
+          (f.brand.toLowerCase().includes(brandLower) && f.name.toLowerCase().includes(nameLower.split(' ')[0]))
+      );
+      setMatched(catalogueMatch ?? null);
+    } catch (err) {
+      setScanError(String(err));
+    } finally {
+      setScanning(false);
+    }
+  }
+
+  function confidenceBadgeColor(confidence: number): string {
+    if (confidence >= 80) return '#22c55e'; // green
+    if (confidence >= 50) return '#f59e0b'; // amber
+    return '#ef4444';                       // red
+  }
+
+  const inputStyle: React.CSSProperties = {
+    display: 'none',
+  };
+
+  return (
+    <div style={{ padding: '16px 0' }}>
+      {/* Upload / camera trigger */}
+      <label
+        htmlFor="scan-input"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 10,
+          padding: '40px 24px',
+          border: '2px dashed #374151',
+          borderRadius: 16,
+          cursor: 'pointer',
+          background: '#111827',
+          textAlign: 'center',
+          transition: 'border-color 0.2s',
+        }}
+      >
+        <span style={{ fontSize: 36 }}>📸</span>
+        <div>
+          <p style={{ fontSize: 15, fontWeight: 600, color: '#f8fafc', margin: '0 0 4px' }}>
+            Take a photo or upload
+          </p>
+          <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+            Point at the bottle — Claude will identify the fragrance
+          </p>
+        </div>
+      </label>
+      <input
+        id="scan-input"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style={inputStyle}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleImage(file);
+          // Reset so the same file can be re-selected
+          e.target.value = '';
+        }}
+      />
+
+      {/* Loading */}
+      {scanning && (
+        <div style={{ marginTop: 24, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>
+          Identifying fragrance…
+        </div>
+      )}
+
+      {/* Error */}
+      {scanError && (
+        <div style={{ marginTop: 16, padding: '12px 16px', background: '#1a0a0a', border: '1px solid #7f1d1d', borderRadius: 12 }}>
+          <p style={{ color: '#ef4444', fontSize: 13, margin: 0 }}>{scanError}</p>
+        </div>
+      )}
+
+      {/* Result */}
+      {scanResult && (
+        <div style={{ marginTop: 20, padding: '20px 16px', background: '#111827', border: '1px solid #1f2937', borderRadius: 16 }}>
+          {/* Confidence badge */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+            <div>
+              <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 4px' }}>{scanResult.brand}</p>
+              <p style={{ fontSize: 18, fontWeight: 700, color: '#f8fafc', margin: '0 0 2px' }}>{scanResult.name}</p>
+              <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>{scanResult.concentration}</p>
+            </div>
+            <span style={{
+              padding: '3px 10px',
+              borderRadius: 20,
+              fontSize: 11,
+              fontWeight: 600,
+              background: `${confidenceBadgeColor(scanResult.confidence)}22`,
+              color: confidenceBadgeColor(scanResult.confidence),
+              border: `1px solid ${confidenceBadgeColor(scanResult.confidence)}44`,
+              flexShrink: 0,
+            }}>
+              {scanResult.confidence}% confident
+            </span>
+          </div>
+
+          {scanResult.notes && (
+            <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 16, fontStyle: 'italic' }}>
+              {scanResult.notes}
+            </p>
+          )}
+
+          {/* Catalogue match or no-match message */}
+          {matched ? (
+            <div>
+              <p style={{ fontSize: 12, color: '#22c55e', marginBottom: 12 }}>
+                ✓ Found in your catalogue
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => onAdd(matched, 'owned')}
+                  style={{
+                    flex: 1, padding: '10px 0', borderRadius: 10,
+                    background: '#c49a4a', color: '#0d1117', border: 'none',
+                    fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  + Add to shelf
+                </button>
+                <button
+                  onClick={() => onAdd(matched, 'wishlist')}
+                  style={{
+                    flex: 1, padding: '10px 0', borderRadius: 10,
+                    background: 'transparent', color: '#94a3b8',
+                    border: '1px solid #374151', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  + Wishlist
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic' }}>
+              Not in your catalogue yet. Search &amp; add it manually, then scan again.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

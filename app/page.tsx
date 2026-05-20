@@ -32,6 +32,7 @@ export default function Home() {
 
   const nav = [
     { href: '/library', label: 'Library', desc: 'Your fragrance shelf', emoji: '🫙' },
+    { href: '/dna-match', label: 'DNA Match', desc: 'Compare any two fragrances', emoji: '🧬' },
     { href: '/learning', label: 'Learning', desc: 'Log & track your sprays', emoji: '📓' },
     { href: '/login', label: 'Account', desc: 'Sign in or out', emoji: '🤝' },
   ];
