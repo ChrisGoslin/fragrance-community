@@ -12,30 +12,29 @@ async function verify() {
     const { count, error } = await supabase
       .from('fragrances')
       .select('*', { count: 'exact', head: true });
-    
+
     if (error) {
       console.error('Error querying fragrances:', error);
       return;
     }
-    
+
     console.log(`✅ Fragrance count: ${count}`);
-    
+
     // Get sample fragrances
     const { data, error: dataError } = await supabase
       .from('fragrances')
       .select('brand, name, gender_profile')
       .limit(5);
-    
+
     if (dataError) {
       console.error('Error fetching samples:', dataError);
       return;
     }
-    
+
     console.log('\nSample fragrances:');
-    data.forEach(f => {
+    data.forEach((f) => {
       console.log(`  - ${f.brand} ${f.name} (${f.gender_profile})`);
     });
-    
   } catch (error) {
     console.error('Verification failed:', error.message);
   }

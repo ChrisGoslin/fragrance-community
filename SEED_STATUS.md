@@ -1,16 +1,19 @@
 # Fragrance Seed Status ✅
 
 ## Summary
+
 **64 fragrances** from your collection master table have been parsed and are ready to seed into Supabase.
 
 ## What Was Done
 
 ### 1. ✅ Parsed Fragrance Markdown File
+
 - **Source**: `/Users/christophergoslin/Downloads/fragrance_collection_master_table (1).md`
 - **Extracted**: 64 fragrances with structured data
 - **Fields**: Brand, Name, Notes (Top/Middle/Base), Gender Profile, Concentration
 
 ### 2. ✅ Generated SQL Migration
+
 - **File**: `supabase/migrations/20260512_seed_fragrances.sql`
 - **Status**: Ready to apply
 - **Content**: 64 INSERT statements for fragrances table
@@ -21,11 +24,13 @@
   - All fragrances: `layering_role = 'Foundation'`
 
 ### 3. ✅ Created Verification Script
+
 - **File**: `verify_seed.js`
 - **Usage**: `node verify_seed.js` (after seeding)
 - **Checks**: Fragrance count and sample data
 
 ### 4. ✅ Documented Seeding Options
+
 - **File**: `FRAGRANCE_SEEDING_GUIDE.md`
 - **Options**:
   - **Dashboard** (Easiest): Copy/paste SQL into Supabase dashboard
@@ -48,12 +53,15 @@ The `fragrances` table has Row-Level Security requiring `added_by` to match auth
 6. **Verify**: Should see "64 rows affected"
 
 ## Verification
+
 After seeding, run:
+
 ```bash
 node verify_seed.js
 ```
 
 Expected output:
+
 ```
 ✅ Fragrance count: 64
 

@@ -1,8 +1,10 @@
 # AGENTS.md — Model Council
 
 ## Overview
+
 This workspace is my personal AI engineering studio.
 Primary goals:
+
 - Ship three real web apps while learning how they work.
 - Understand architecture, tradeoffs, and code well enough to reason about them.
 - Grow from Cowork into Claude Code as skills develop.
@@ -14,6 +16,7 @@ Agent files live in: council/
 ## The Council
 
 ### orchestrator
+
 **Role:** Planner and coordinator.
 **Does:** Translates goals into plans, decides which agent handles what,
 surfaces tradeoffs, keeps scope reasonable.
@@ -21,6 +24,7 @@ surfaces tradeoffs, keeps scope reasonable.
 **Hands off to:** teacher, architect, builder, reviewer.
 
 ### teacher
+
 **Role:** Explains concepts, code, and decisions in plain language.
 **Does:** Teaches what is happening and why, connects to product analogies,
 suggests small exercises to deepen understanding.
@@ -28,6 +32,7 @@ suggests small exercises to deepen understanding.
 **Hands off to:** architect, builder, orchestrator.
 
 ### architect
+
 **Role:** Designs the structure of apps and systems.
 **Does:** Proposes stacks, diagrams, data models. Identifies risks and tradeoffs.
 Keeps complexity appropriate for current level.
@@ -35,6 +40,7 @@ Keeps complexity appropriate for current level.
 **Hands off to:** builder, teacher, reviewer.
 
 ### builder
+
 **Role:** Implements code, configs, and scripts.
 **Does:** Scaffolds projects, builds features, wires frontend + backend + DB.
 Writes tests and comments where they aid learning.
@@ -42,6 +48,7 @@ Writes tests and comments where they aid learning.
 **Hands off to:** reviewer, teacher.
 
 ### reviewer
+
 **Role:** Reviews plans, code, and UX.
 **Does:** Checks correctness, clarity, and maintainability. Highlights risks and
 missing cases. Suggests specific improvements.
