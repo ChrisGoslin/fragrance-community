@@ -38,7 +38,10 @@ export async function POST(req: Request) {
     const { image_base64, media_type } = body;
 
     if (!image_base64 || !media_type) {
-      return NextResponse.json({ error: 'image_base64 and media_type are required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'image_base64 and media_type are required' },
+        { status: 400 }
+      );
     }
 
     const client = new Anthropic({

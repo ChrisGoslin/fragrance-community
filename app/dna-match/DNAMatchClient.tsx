@@ -41,8 +41,7 @@ export default function DNAMatchClient({ fragrances }: { fragrances: Fragrance[]
     () =>
       fragrances.filter(
         (f) =>
-          `${f.brand} ${f.name}`.toLowerCase().includes(searchA.toLowerCase()) &&
-          f.id !== fragB?.id
+          `${f.brand} ${f.name}`.toLowerCase().includes(searchA.toLowerCase()) && f.id !== fragB?.id
       ),
     [searchA, fragB, fragrances]
   );
@@ -51,8 +50,7 @@ export default function DNAMatchClient({ fragrances }: { fragrances: Fragrance[]
     () =>
       fragrances.filter(
         (f) =>
-          `${f.brand} ${f.name}`.toLowerCase().includes(searchB.toLowerCase()) &&
-          f.id !== fragA?.id
+          `${f.brand} ${f.name}`.toLowerCase().includes(searchB.toLowerCase()) && f.id !== fragA?.id
       ),
     [searchB, fragA, fragrances]
   );
@@ -142,7 +140,9 @@ export default function DNAMatchClient({ fragrances }: { fragrances: Fragrance[]
         <div style={styles.result}>
           <ScoreRing score={result.score} />
 
-          <div style={{ ...styles.categoryBadge, borderColor: categoryColor, color: categoryColor }}>
+          <div
+            style={{ ...styles.categoryBadge, borderColor: categoryColor, color: categoryColor }}
+          >
             {result.category}
           </div>
 

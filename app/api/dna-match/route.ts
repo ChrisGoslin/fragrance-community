@@ -137,9 +137,10 @@ export async function POST(req: Request) {
     }
 
     // Normalize pair order so (A,B) and (B,A) map to same cache row
-    const [orderedA, orderedB] = fragrance_a_id < fragrance_b_id
-      ? [fragrance_a_id, fragrance_b_id]
-      : [fragrance_b_id, fragrance_a_id];
+    const [orderedA, orderedB] =
+      fragrance_a_id < fragrance_b_id
+        ? [fragrance_a_id, fragrance_b_id]
+        : [fragrance_b_id, fragrance_a_id];
 
     // Check cache
     const { data: cached } = await supabase

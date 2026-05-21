@@ -877,7 +877,11 @@ function ScanTab({
   };
 
   const confidenceColor =
-    result && result.confidence >= 80 ? '#22c55e' : result && result.confidence >= 50 ? '#eab308' : '#ef4444';
+    result && result.confidence >= 80
+      ? '#22c55e'
+      : result && result.confidence >= 50
+        ? '#eab308'
+        : '#ef4444';
 
   return (
     <div style={scanStyles.container}>
@@ -907,7 +911,13 @@ function ScanTab({
           </div>
           <div style={scanStyles.meta}>
             {result.concentration} • Confidence{' '}
-            <span style={{ ...scanStyles.confidenceBadge, borderColor: confidenceColor, color: confidenceColor }}>
+            <span
+              style={{
+                ...scanStyles.confidenceBadge,
+                borderColor: confidenceColor,
+                color: confidenceColor,
+              }}
+            >
               {result.confidence}%
             </span>
           </div>
@@ -917,10 +927,18 @@ function ScanTab({
             <span style={scanStyles.alreadyAdded}>Already in collection</span>
           ) : (
             <div style={scanStyles.addButtons}>
-              <button style={scanStyles.addBtn} disabled={adding} onClick={() => handleAddToCollection('owned')}>
+              <button
+                style={scanStyles.addBtn}
+                disabled={adding}
+                onClick={() => handleAddToCollection('owned')}
+              >
                 {adding ? '…' : 'Add owned'}
               </button>
-              <button style={scanStyles.addBtn} disabled={adding} onClick={() => handleAddToCollection('wishlist')}>
+              <button
+                style={scanStyles.addBtn}
+                disabled={adding}
+                onClick={() => handleAddToCollection('wishlist')}
+              >
                 Wishlist
               </button>
             </div>
