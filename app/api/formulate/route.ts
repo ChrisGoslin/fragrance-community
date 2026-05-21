@@ -10,27 +10,25 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 import { createClient } from '@/utils/supabase/server';
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
-// Simple in-memory limiter: 10 Formulate calls per user per minute.
-// This is per-serverless-instance — not globally persistent.
-// For production, replace with a persistent store (e.g. Upstash Redis, Supabase).
-const RATE_LIMIT_RPM = 10;
-const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
-
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const windowMs = 60_000;
-  const entry = rateLimitMap.get(userId);
-
-  if (!entry || now - entry.windowStart > windowMs) {
-    rateLimitMap.set(userId, { count: 1, windowStart: now });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT_RPM) return false;
-  entry.count++;
-  return true;
+// Globally persistent via Upstash Redis — shared across all serverless instances.
+// Limit: 10 Formulate calls per user per minute (sliding window).
+// Requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN in env.
+//
+// If env vars are absent (local dev without Upstash), falls back to allowing
+// the request through so development is not blocked.
+let ratelimit: Ratelimit | null = null;
+if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  ratelimit = new Ratelimit({
+    redis: Redis.fromEnv(),
+    limiter: Ratelimit.slidingWindow(10, '1 m'),
+    prefix: 'formulate',
+    analytics: true,
+  });
 }
 
 type FragranceInput = {
@@ -160,12 +158,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Rate limit — prevents authenticated users from burning API credits at scale
-    if (!checkRateLimit(user.id)) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please wait a moment before formulating again.' },
-        { status: 429 }
-      );
+    // Rate limit — globally enforced via Upstash Redis across all serverless instances
+    if (ratelimit) {
+      const { success } = await ratelimit.limit(user.id);
+      if (!success) {
+        return NextResponse.json(
+          { error: 'Too many requests. Please wait a moment before formulating again.' },
+          { status: 429 }
+        );
+      }
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
