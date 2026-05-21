@@ -16,11 +16,13 @@ Scope: Supabase-backed data model, RLS policies, auth/session usage in client ro
 ## 1) Authentication flaws
 
 ### Findings
+
 1. App relies on client-side session reads (`supabase.auth.getSession`) in page components; there is limited server-side enforcement in app routes.
 2. Magic-link login exists, but there is no explicit anti-automation envelope (IP/email rate limits) at app layer.
 3. No explicit session freshness policy (max age/re-auth checks) for sensitive mutations.
 
 ### Recommendations
+
 - Enforce sensitive mutations through server-side route handlers or RPC wrappers that validate auth context before write.
 - Add rate limits for OTP requests and per-user write operations (token bucket by user+IP).
 - Add session risk checks (recent auth for account-sensitive actions).
@@ -30,11 +32,13 @@ Scope: Supabase-backed data model, RLS policies, auth/session usage in client ro
 ## 2) Authorization flaws / IDOR
 
 ### Findings
+
 1. RLS is the primary authorization boundary (`collections`, `wear_logs`, etc.), which is correct but creates a **single-point-of-policy** risk.
 2. Client updates/deletes by row id imply IDOR protection entirely depends on RLS predicates.
 3. Migration history shows table evolution (`user_collection` vs `collections`) and policy rewrites; schema drift could introduce policy gaps.
 
 ### Recommendations
+
 - Add CI policy tests that attempt cross-user access for every write/read path.
 - Add database-level ownership assertions in SQL test fixtures.
 - Maintain a policy matrix doc per table/verb and verify on each migration.
@@ -44,11 +48,13 @@ Scope: Supabase-backed data model, RLS policies, auth/session usage in client ro
 ## 3) Injection vulnerabilities
 
 ### Findings
+
 1. Supabase query builder reduces classic SQL injection risk.
 2. Free-text fields (notes/search) still require output encoding and length constraints.
 3. Trigger hardening exists (`search_path` lock-down + execute revoke for `handle_new_user`) which is a good defense-in-depth move.
 
 ### Recommendations
+
 - Enforce max lengths and character policies for text columns used in UI rendering.
 - Add stored procedure security checklist: fixed `search_path`, least-privilege grants, strict argument validation.
 
@@ -57,12 +63,14 @@ Scope: Supabase-backed data model, RLS policies, auth/session usage in client ro
 ## 4) Rate limiting issues
 
 ### Findings
+
 - No explicit app-level throttling identified for:
   - reaction upserts,
   - collection mutations,
   - OTP initiation.
 
 ### Recommendations
+
 - Add per-endpoint and per-identity rate limiting:
   - `signInWithOtp`: strict IP + email window caps.
   - collection/reaction writes: user-level write QPS caps.
@@ -73,11 +81,13 @@ Scope: Supabase-backed data model, RLS policies, auth/session usage in client ro
 ## 5) Concurrency / transaction risks
 
 ### Findings
+
 1. Multiple client-driven writes (insert/upsert/update) with optimistic UI can race.
 2. Multi-step flows (write then refresh) are non-atomic.
 3. Toggle-style reaction writes are susceptible to last-write-wins ambiguity under rapid interaction.
 
 ### Recommendations
+
 - Move high-contention mutations to RPC functions with explicit transactional behavior.
 - Add optimistic concurrency (version/timestamp checks) for frequently edited rows.
 - Add idempotency keys for retried write operations.
@@ -87,11 +97,13 @@ Scope: Supabase-backed data model, RLS policies, auth/session usage in client ro
 ## 6) Scaling bottlenecks
 
 ### Findings
+
 1. Broad `select('*')` catalogue reads from client can increase payload and latency.
 2. Pagination/search are mostly client-side for catalogue filtering.
 3. FK index backfill migration exists, but workload growth still needs read-path tuning.
 
 ### Recommendations
+
 - Replace `select('*')` with explicit column projections.
 - Move search/filter to indexed server-side queries with pagination.
 - Track slow query classes and add targeted indexes from production traces.
@@ -101,9 +113,11 @@ Scope: Supabase-backed data model, RLS policies, auth/session usage in client ro
 ## 7) Retry, timeout, and fallback handling
 
 ### Findings
+
 - Retry/timeout behavior is inconsistent at UI call sites; most failures only surface as generic messages.
 
 ### Recommendations
+
 - Standardize request wrapper with:
   - timeout budget,
   - bounded retries on transient classes,
@@ -115,11 +129,13 @@ Scope: Supabase-backed data model, RLS policies, auth/session usage in client ro
 ## 8) Logging/monitoring and distributed weaknesses
 
 ### Findings
+
 1. No end-to-end correlation id strategy is visible in app-level flows.
 2. Limited structured event taxonomy for mutation success/failure.
 3. No explicit SLO/SLI definitions for API reliability and security signals.
 
 ### Recommendations
+
 - Emit structured logs with `request_id`, `user_hash`, `table`, `operation`, `latency_ms`, `error_code`.
 - Define SLOs: write success %, p95 latency, auth error rates, cross-tenant deny events.
 - Add anomaly detection for abuse patterns and retry storms.
@@ -129,9 +145,11 @@ Scope: Supabase-backed data model, RLS policies, auth/session usage in client ro
 ## 9) Message queue/eventual consistency risks
 
 ### Findings
+
 - Current architecture appears request/response-centric with no explicit queue; when async jobs are later introduced, replay/idempotency gaps are likely if not designed early.
 
 ### Recommendations
+
 - If introducing queues:
   - enforce idempotent consumers,
   - dead-letter queue policy,
@@ -143,10 +161,12 @@ Scope: Supabase-backed data model, RLS policies, auth/session usage in client ro
 ## 10) Schema evolution risks
 
 ### Findings
+
 1. Migration history indicates iterative schema shifts and security/perf fixes.
 2. Potential mismatch risk between code assumptions and DB shape/policies over time.
 
 ### Recommendations
+
 - Enforce migration contract tests before deploy:
   - old client vs new schema compatibility,
   - policy regression checks,

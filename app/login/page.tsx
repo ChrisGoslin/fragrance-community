@@ -5,7 +5,6 @@ import type { Session } from '@supabase/supabase-js';
 import { createClient } from '@/utils/supabase/client';
 
 export default function LoginPage() {
-  const supabase = createClient();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -13,6 +12,8 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    const supabase = createClient();
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
@@ -29,13 +30,19 @@ export default function LoginPage() {
 
   async function signIn(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const supabase = createClient();
     setSubmitting(true);
-    setStatus('Sending link…');
+    setStatus('Sending link...');
 
     try {
+      const requestedNext = new URLSearchParams(window.location.search).get('next') ?? '/profile';
+      const next = requestedNext.startsWith('/') ? requestedNext : '/profile';
+      const redirectTo = new URL('/auth/callback', window.location.origin);
+      redirectTo.searchParams.set('next', next);
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo: redirectTo.toString() },
       });
 
       setStatus(error ? error.message : 'Check your email for the login link.');
@@ -49,6 +56,7 @@ export default function LoginPage() {
   }
 
   async function signOut() {
+    const supabase = createClient();
     await supabase.auth.signOut();
   }
 

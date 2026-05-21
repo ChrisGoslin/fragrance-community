@@ -6,12 +6,13 @@ import { createClient } from '@/utils/supabase/client';
 import type { Session } from '@supabase/supabase-js';
 
 export default function Home() {
-  const supabase = createClient();
   const [collectionCount, setCollectionCount] = useState<number | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [collectionError, setCollectionError] = useState<string | null>(null);
 
   useEffect(() => {
+    const supabase = createClient();
+
     supabase.auth
       .getSession()
       .then(async ({ data: { session } }: { data: { session: Session | null } }) => {
@@ -32,6 +33,7 @@ export default function Home() {
   const nav = [
     { href: '/library', label: 'Library', desc: 'Your fragrance shelf', emoji: '🫙' },
     { href: '/learning', label: 'Learning', desc: 'Log & track your sprays', emoji: '📓' },
+    { href: '/dna-match', label: 'DNA Match', desc: 'Compare any two fragrances', emoji: '🧬' },
     { href: '/login', label: 'Account', desc: 'Sign in or out', emoji: '🤝' },
   ];
 

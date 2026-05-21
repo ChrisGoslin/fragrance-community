@@ -11,6 +11,7 @@ Assumption: launch target = 100k users with meaningful concurrent read/write tra
 ## A) Fragrance Community — Full Production Readiness Audit
 
 ### Architecture
+
 - Current architecture is frontend-heavy with direct client->Supabase access patterns.
 - At 100k users, this increases exposure to:
   - inconsistent client behavior,
@@ -19,6 +20,7 @@ Assumption: launch target = 100k users with meaningful concurrent read/write tra
 - Recommendation: move critical mutation paths behind server routes/RPC contracts with consistent retries, rate limits, and telemetry.
 
 ### Security
+
 - RLS exists and is the core tenant boundary.
 - Main risks:
   - over-reliance on RLS without automated regression tests,
@@ -26,44 +28,56 @@ Assumption: launch target = 100k users with meaningful concurrent read/write tra
   - limited visible security event monitoring.
 
 ### Deployment
+
 - No evidence of hardened progressive rollout strategy (canary, feature flags, staged traffic ramp).
 - `next/font` dependence on external font fetch can break builds in constrained environments.
 
 ### Monitoring / Observability
+
 - No demonstrated end-to-end trace IDs, structured logs, SLO dashboards, or on-call runbooks.
 - Current incident diagnosis would be slow and manual.
 
 ### CI/CD
+
 - Baseline lint/build is unstable in current environment history.
 - No clear gated pipeline covering unit/e2e/a11y/perf/security/policy checks.
 
 ### Rollback capability
+
 - SQL migrations exist, but rollback readiness is unclear.
 - Need explicit rollback scripts, tested restore flow, and change freeze criteria.
 
 ### Testing coverage
+
 - Useful QA guidance exists in docs, but execution automation and pass criteria are incomplete for launch-critical confidence.
 
 ### Cost optimization
+
 - Broad client selects and read-heavy patterns can increase Supabase and egress cost at scale.
 - Need projection, pagination, caching, and hot path optimization.
 
 ### Incident recovery
+
 - Missing explicit incident commander workflow, severity policy, and communication templates.
 
 ### Backups
+
 - No clear documented RPO/RTO, backup verification cadence, or restoration drills.
 
 ### Secrets management
+
 - Need explicit secret rotation policy, environment segregation, and access audit.
 
 ### Infrastructure risks
+
 - Third-party dependency concentration (Supabase + hosted build/runtime) without rehearsed failover/degraded mode.
 
 ### Compliance concerns
+
 - PII handling (email auth) requires retention/deletion policy clarity, access controls, and audit logs.
 
 ### Documentation quality
+
 - Strong strategic docs exist; operational docs are improving but still missing executable runbooks.
 
 ---
@@ -112,18 +126,22 @@ Assumption: launch target = 100k users with meaningful concurrent read/write tra
 ## 5) 30-day stabilization roadmap
 
 ### Week 1
+
 - Lock launch baseline: CI gates, alerting, on-call rotation, incident templates.
 - Implement rate limits + abuse telemetry.
 
 ### Week 2
+
 - Build RLS/IDOR contract test suite and enforce on all migrations.
 - Introduce server-side wrappers/RPC for critical writes.
 
 ### Week 3
+
 - Performance pass: query projection, pagination, caching, index tuning from traces.
 - Add front-end perf and hydration regression checks.
 
 ### Week 4
+
 - Disaster recovery rehearsal: restore drill, rollback drill, postmortem simulation.
 - Compliance hardening: retention/deletion and access auditing docs.
 
@@ -188,10 +206,13 @@ Assumption: launch target = 100k users with meaningful concurrent read/write tra
 I cannot perform a true repo-specific audit yet because no `Finance Planner` codebase is present in this workspace.
 
 ### Immediate next step required
+
 - Provide local path or repository checkout for Finance Planner.
 
 ### Until then, use this provisional checklist
+
 Apply the exact same framework above, with extra focus on financial-domain controls:
+
 - strong auth + MFA optionality,
 - stricter audit logging and immutable event trails,
 - PII encryption and retention controls,
@@ -201,7 +222,9 @@ Apply the exact same framework above, with extra focus on financial-domain contr
 - deterministic backup/restore + reporting verification.
 
 ### Deliverables ready once repo is available
+
 When you provide the repo path, I will generate the same 8 outputs:
+
 1. Launch blockers
 2. High-risk concerns
 3. Medium-risk concerns
