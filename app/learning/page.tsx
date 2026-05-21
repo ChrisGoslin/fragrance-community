@@ -20,11 +20,13 @@ const categories = [
   "Other",
 ];
 
-// Read notes from localStorage once, at mount time.
-// Wrapped in try/catch because:
-//   - localStorage can throw in private browsing with strict settings
-//   - JSON.parse throws if the stored data was ever corrupted
+// Read notes from localStorage.
+// Guards against:
+//   - server-side render (localStorage is undefined on the server)
+//   - private browsing with strict storage settings
+//   - corrupted JSON
 function readStoredNotes(): Note[] {
+  if (typeof window === "undefined") return [];
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? (JSON.parse(saved) as Note[]) : [];
