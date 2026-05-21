@@ -32,12 +32,17 @@ export default function LoginPage() {
     e.preventDefault();
     const supabase = createClient();
     setSubmitting(true);
-    setStatus('Sending link…');
+    setStatus('Sending link...');
 
     try {
+      const requestedNext = new URLSearchParams(window.location.search).get('next') ?? '/profile';
+      const next = requestedNext.startsWith('/') ? requestedNext : '/profile';
+      const redirectTo = new URL('/auth/callback', window.location.origin);
+      redirectTo.searchParams.set('next', next);
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo: redirectTo.toString() },
       });
 
       setStatus(error ? error.message : 'Check your email for the login link.');
