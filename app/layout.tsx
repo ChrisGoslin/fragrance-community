@@ -61,6 +61,12 @@ export default function RootLayout({
             >
               Layering Lab
             </Link>
+            <Link
+              href="/dna-match"
+              className="text-slate-300 hover:text-white text-sm transition-colors"
+            >
+              DNA Match
+            </Link>
           </nav>
         </header>
 

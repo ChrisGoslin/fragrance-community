@@ -116,7 +116,7 @@ export default function LibraryPage() {
   const [collection, setCollection] = useState<CollectionItem[]>([]);
   const [fragrances, setFragrances] = useState<Fragrance[]>([]);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'collection' | 'search'>('collection');
+  const [activeTab, setActiveTab] = useState<'collection' | 'search' | 'scan'>('collection');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterTier, setFilterTier] = useState<number>(0);
   const [reactions, setReactions] = useState<Record<string, Reaction>>({});
@@ -383,6 +383,12 @@ export default function LibraryPage() {
         >
           Search & add
         </button>
+        <button
+          style={activeTab === 'scan' ? styles.tabActive : styles.tab}
+          onClick={() => setActiveTab('scan')}
+        >
+          📸 Scan bottle
+        </button>
       </div>
 
       {/* ── COLLECTION TAB ── */}
@@ -600,6 +606,11 @@ export default function LibraryPage() {
         </div>
       )}
 
+      {/* ── SCAN TAB ── */}
+      {activeTab === 'scan' && (
+        <ScanTab fragrances={fragrances} inCollection={inCollection} onAdd={addToCollection} />
+      )}
+
       {/* Toast */}
       {toast && <div style={styles.toast}>{toast}</div>}
     </main>
@@ -787,6 +798,228 @@ function CollectionCard({
     </div>
   );
 }
+
+// ── Scan tab ──────────────────────────────────────────────────────────────────
+
+function ScanTab({
+  fragrances,
+  inCollection,
+  onAdd,
+}: {
+  fragrances: Fragrance[];
+  inCollection: Set<string>;
+  onAdd: (f: Fragrance, status: 'owned' | 'wishlist') => Promise<void>;
+}) {
+  const [image, setImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{
+    brand: string;
+    name: string;
+    concentration: string;
+    confidence: number;
+    notes: string;
+  } | null>(null);
+  const [adding, setAdding] = useState(false);
+
+  const handleImageCapture = async (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = (e.target?.result as string).split(',')[1];
+      setImage(e.target?.result as string);
+      setLoading(true);
+      setResult(null);
+
+      try {
+        const res = await fetch('/api/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_base64: base64,
+            media_type: file.type as 'image/jpeg' | 'image/png' | 'image/webp',
+          }),
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          setResult(data.result);
+        }
+      } catch (error) {
+        console.error('Scan failed:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddToCollection = async (status: 'owned' | 'wishlist') => {
+    if (!result) return;
+
+    const match = fragrances.find(
+      (f) =>
+        f.brand.toLowerCase().includes(result.brand?.toLowerCase() || '') &&
+        f.name.toLowerCase().includes(result.name?.toLowerCase() || '')
+    );
+
+    if (!match) {
+      alert("Couldn't find this fragrance in the catalogue. Try searching manually.");
+      return;
+    }
+
+    setAdding(true);
+    try {
+      await onAdd(match, status);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const confidenceColor =
+    result && result.confidence >= 80 ? '#22c55e' : result && result.confidence >= 50 ? '#eab308' : '#ef4444';
+
+  return (
+    <div style={scanStyles.container}>
+      <label style={scanStyles.uploadLabel}>
+        <span style={scanStyles.uploadText}>📸 Upload or capture a fragrance bottle</span>
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={(e) => e.target.files?.[0] && handleImageCapture(e.target.files[0])}
+          style={scanStyles.fileInput}
+        />
+      </label>
+
+      {image && (
+        <div style={scanStyles.preview}>
+          <img src={image} alt="Captured bottle" style={scanStyles.previewImage} />
+        </div>
+      )}
+
+      {loading && <p style={scanStyles.loadingText}>Analyzing image…</p>}
+
+      {result && (
+        <div style={scanStyles.result}>
+          <div>
+            <strong>{result.brand}</strong> {result.name}
+          </div>
+          <div style={scanStyles.meta}>
+            {result.concentration} • Confidence{' '}
+            <span style={{ ...scanStyles.confidenceBadge, borderColor: confidenceColor, color: confidenceColor }}>
+              {result.confidence}%
+            </span>
+          </div>
+          <div style={scanStyles.notes}>{result.notes}</div>
+
+          {inCollection.has(fragrances.find((f) => f.name === result.name)?.id || '') ? (
+            <span style={scanStyles.alreadyAdded}>Already in collection</span>
+          ) : (
+            <div style={scanStyles.addButtons}>
+              <button style={scanStyles.addBtn} disabled={adding} onClick={() => handleAddToCollection('owned')}>
+                {adding ? '…' : 'Add owned'}
+              </button>
+              <button style={scanStyles.addBtn} disabled={adding} onClick={() => handleAddToCollection('wishlist')}>
+                Wishlist
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const scanStyles: Record<string, React.CSSProperties> = {
+  container: {
+    padding: '20px',
+    textAlign: 'center',
+  },
+  uploadLabel: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    padding: '40px 20px',
+    border: '2px dashed #e5e7eb',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    background: '#fafafa',
+  },
+  uploadText: {
+    fontSize: '16px',
+    fontWeight: '500',
+    color: '#374151',
+  },
+  fileInput: {
+    display: 'none',
+  },
+  preview: {
+    marginTop: '20px',
+  },
+  previewImage: {
+    maxWidth: '100%',
+    maxHeight: '300px',
+    borderRadius: '8px',
+  },
+  loadingText: {
+    marginTop: '16px',
+    color: '#6b7280',
+  },
+  result: {
+    marginTop: '20px',
+    padding: '16px',
+    border: '1px solid #e5e7eb',
+    borderRadius: '8px',
+    background: '#f9fafb',
+    textAlign: 'left',
+  },
+  meta: {
+    fontSize: '13px',
+    color: '#6b7280',
+    marginTop: '8px',
+  },
+  confidenceBadge: {
+    display: 'inline-block',
+    padding: '2px 8px',
+    border: '1px solid',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: '600',
+  },
+  notes: {
+    fontSize: '13px',
+    color: '#6b7280',
+    marginTop: '8px',
+  },
+  alreadyAdded: {
+    display: 'inline-block',
+    marginTop: '12px',
+    padding: '6px 12px',
+    background: '#e5e7eb',
+    borderRadius: '4px',
+    fontSize: '13px',
+    fontWeight: '500',
+    color: '#374151',
+  },
+  addButtons: {
+    display: 'flex',
+    gap: '8px',
+    marginTop: '12px',
+  },
+  addBtn: {
+    flex: 1,
+    padding: '8px 12px',
+    background: '#111',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '500',
+  },
+};
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
