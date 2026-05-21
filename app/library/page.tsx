@@ -35,12 +35,24 @@ export default function LibraryPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // ── On mount: check if user is logged in ──────────────────────────────────
+  // ── On mount: read session and subscribe to auth changes ─────────────────
+  // getSession() bootstraps the initial state; onAuthStateChange keeps it
+  // in sync if the user signs in/out elsewhere (e.g. NavBar, another tab).
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserId(session?.user.id ?? null);
       setAuthLoading(false);
     });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user.id ?? null);
+      setAuthLoading(false);
+      if (!session) setFragrances([]);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // ── Load fragrances — wrapped in useCallback so the effect dep is stable ──
@@ -110,15 +122,15 @@ export default function LibraryPage() {
   // ── Delete a fragrance ────────────────────────────────────────────────────
   async function handleDelete(id: string) {
     // Optimistic update: remove from UI immediately for a snappy feel.
-    // If the server call fails, we roll back so the item reappears.
-    const previous = fragrances;
+    const deleted = fragrances.find((f) => f.id === id);
     setFragrances((prev) => prev.filter((f) => f.id !== id));
 
     const { error } = await supabase.from("fragrances").delete().eq("id", id);
 
     if (error) {
-      // Roll back — restore the list to what it was before the delete
-      setFragrances(previous);
+      // Re-insert only the failed item so overlapping deletes don't clobber
+      // each other's state — never restore a full stale snapshot.
+      if (deleted) setFragrances((prev) => [deleted, ...prev]);
       setListError(`Delete failed: ${error.message}`);
     }
   }
