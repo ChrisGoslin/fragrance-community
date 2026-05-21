@@ -1,15 +1,15 @@
-import { filterFragrances } from '../lib/filter-fragrances'
+import { filterFragrances } from '../lib/filter-fragrances';
 
 type Fragrance = {
-  id: string
-  brand: string
-  name: string
-  phase: 1 | 2 | 3
-  temperature: string
-  lean: string
-  anosmia_risk: 'High' | 'Medium' | 'Low'
-  rating: number | null
-}
+  id: string;
+  brand: string;
+  name: string;
+  phase: 1 | 2 | 3;
+  temperature: string;
+  lean: string;
+  anosmia_risk: 'High' | 'Medium' | 'Low';
+  rating: number | null;
+};
 
 const makeFragrances = (): Fragrance[] => {
   const base: Fragrance[] = [
@@ -73,7 +73,7 @@ const makeFragrances = (): Fragrance[] => {
       anosmia_risk: 'High',
       rating: 5,
     },
-  ]
+  ];
 
   const generated: Fragrance[] = Array.from({ length: 70 }, (_, index) => ({
     id: `generated-${index + 1}`,
@@ -84,90 +84,90 @@ const makeFragrances = (): Fragrance[] => {
     lean: 'Unisex',
     anosmia_risk: 'Medium',
     rating: null,
-  }))
+  }));
 
-  return [...base, ...generated]
-}
+  return [...base, ...generated];
+};
 
 describe('filterFragrances', () => {
-  const fragrances = makeFragrances()
+  const fragrances = makeFragrances();
 
   test('no filters returns all 76 fragrances', () => {
     const result = filterFragrances(fragrances, {
       season: 'All',
       lean: 'All',
       anosmia: 'All',
-    })
+    });
 
-    expect(result).toHaveLength(76)
-  })
+    expect(result).toHaveLength(76);
+  });
 
   test('season Cold returns only Cold fragrances', () => {
     const result = filterFragrances(fragrances, {
       season: 'Cold',
       lean: 'All',
       anosmia: 'All',
-    })
+    });
 
-    expect(result).toHaveLength(3)
-    expect(result.every((fragrance) => fragrance.temperature === 'Cold')).toBe(true)
-  })
+    expect(result).toHaveLength(3);
+    expect(result.every((fragrance) => fragrance.temperature === 'Cold')).toBe(true);
+  });
 
   test('lean Masculine plus season Cold returns the intersection', () => {
     const result = filterFragrances(fragrances, {
       season: 'Cold',
       lean: 'Masculine',
       anosmia: 'All',
-    })
+    });
 
     expect(result.map((fragrance) => fragrance.id)).toEqual([
       'cold-masculine-high',
       'cold-masculine-low',
-    ])
-  })
+    ]);
+  });
 
   test('anosmia High returns only High risk fragrances', () => {
     const result = filterFragrances(fragrances, {
       season: 'All',
       lean: 'All',
       anosmia: 'High',
-    })
+    });
 
-    expect(result).toHaveLength(2)
-    expect(result.every((fragrance) => fragrance.anosmia_risk === 'High')).toBe(true)
-  })
+    expect(result).toHaveLength(2);
+    expect(result.every((fragrance) => fragrance.anosmia_risk === 'High')).toBe(true);
+  });
 
   test('anosmia Low plus lean Feminine returns the correct intersection', () => {
     const result = filterFragrances(fragrances, {
       season: 'All',
       lean: 'Feminine',
       anosmia: 'Low',
-    })
+    });
 
     expect(result.map((fragrance) => fragrance.id)).toEqual([
       'cold-feminine-low',
       'warm-feminine-low',
-    ])
-  })
+    ]);
+  });
 
   test('filter with no matches returns an empty array', () => {
     const result = filterFragrances(fragrances, {
       season: 'Hot',
       lean: 'Feminine',
       anosmia: 'High',
-    })
+    });
 
-    expect(result).toEqual([])
-  })
+    expect(result).toEqual([]);
+  });
 
   test('all filters set to All returns all fragrances', () => {
     const result = filterFragrances(fragrances, {
       season: 'All',
       lean: 'All',
       anosmia: 'All',
-    })
+    });
 
-    expect(result).toEqual(fragrances)
-    expect(result).toHaveLength(76)
-  })
-})
+    expect(result).toEqual(fragrances);
+    expect(result).toHaveLength(76);
+  });
+});

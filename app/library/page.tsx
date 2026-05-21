@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
-const supabase = createClient();
-
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface Fragrance {
@@ -131,6 +129,8 @@ export default function LibraryPage() {
   // ── Auth ─────────────────────────────────────────────────────────────────
 
   useEffect(() => {
+    const supabase = createClient();
+
     supabase.auth
       .getSession()
       .then(({ data: { session } }: { data: { session: Session | null } }) => {
@@ -148,6 +148,7 @@ export default function LibraryPage() {
 
   const loadCollection = useCallback(async () => {
     if (!userId) return;
+    const supabase = createClient();
     setLoading(true);
     setLoadingError(null);
     const { data, error } = await supabase
@@ -174,6 +175,8 @@ export default function LibraryPage() {
   useEffect(() => {
     if (!userId) return;
     let active = true;
+    const supabase = createClient();
+
     supabase
       .from('collections')
       .select(`*, fragrance:fragrances(*)`)
@@ -194,12 +197,16 @@ export default function LibraryPage() {
         }
         setLoading(false);
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [userId]);
 
   // ── Load all fragrances for search ───────────────────────────────────────
 
   useEffect(() => {
+    const supabase = createClient();
+
     supabase
       .from('fragrances')
       .select('*')
@@ -227,6 +234,7 @@ export default function LibraryPage() {
 
   async function addToCollection(fragrance: Fragrance, status: 'owned' | 'wishlist') {
     if (!userId) return;
+    const supabase = createClient();
     setAdding(fragrance.id);
     const { error } = await supabase.from('collections').insert({
       user_id: userId,
@@ -261,6 +269,7 @@ export default function LibraryPage() {
       personal_notes: string;
     }>
   ) {
+    const supabase = createClient();
     const { error } = await supabase.from('collections').update(updates).eq('id', id);
     if (!error) {
       setCollection((prev) =>
@@ -273,6 +282,7 @@ export default function LibraryPage() {
 
   async function handleStamp(fragranceId: string, stamp: 'liked' | 'disliked' | 'unworn') {
     if (!userId) return;
+    const supabase = createClient();
     const current = reactions[fragranceId] ?? null;
     const next: Reaction = current === stamp ? null : stamp;
 
@@ -294,6 +304,7 @@ export default function LibraryPage() {
 
   async function removeFromCollection(id: string, name: string) {
     if (!confirm(`Remove ${name} from your collection?`)) return;
+    const supabase = createClient();
     const { error } = await supabase.from('collections').delete().eq('id', id);
     if (!error) {
       setCollection((prev) => prev.filter((item) => item.id !== id));

@@ -6,6 +6,7 @@ If a request conflicts with this file, flag it and propose a resolution.
 ---
 
 ## Project 1 — Fragrance App
+
 - **Goal:** A web app for fragrance discovery, likely including browsing,
   searching, and some form of personalisation or recommendations.
 - **Status:** In progress — has working code deployed on Vercel; missing
@@ -21,6 +22,7 @@ If a request conflicts with this file, flag it and propose a resolution.
 ---
 
 ## Project 2 — Wholesale Gardening Database
+
 - **Goal:** A database-backed app for wholesale gardening — likely product
   catalogue, inventory, or ordering for a B2B context.
 - **Status:** Early — idea and some specs exist, limited working code.
@@ -34,6 +36,7 @@ If a request conflicts with this file, flag it and propose a resolution.
 ---
 
 ## Project 3 — Personal Financial Planner
+
 - **Goal:** A personal tool for financial planning — tracking, projections,
   or goal-setting for personal use.
 - **Status:** Early — idea and some specs exist, limited working code.
@@ -49,6 +52,7 @@ If a request conflicts with this file, flag it and propose a resolution.
 ---
 
 ## Cross-project principles
+
 - Prefer reusing the same stack across projects where possible.
 - Each project should reach a real MVP before adding new features.
 - Keep complexity low — we are learning while building.
