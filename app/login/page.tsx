@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from '@/utils/supabase/client';
+const supabase = createClient();
 import type { Session } from "@/lib/types";
 
 export default function LoginPage() {

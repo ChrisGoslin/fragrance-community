@@ -5,7 +5,8 @@
 // Supabase's RLS policy allows reading rows where is_public = true.
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from '@/utils/supabase/client';
+const supabase = createClient();
 import type { Fragrance } from "@/lib/types";
 
 // Only the columns we actually display — no user_id needed here

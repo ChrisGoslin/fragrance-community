@@ -5,7 +5,8 @@
 // Supabase Row Level Security ensures you only see your own entries.
 
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from '@/utils/supabase/client';
+const supabase = createClient();
 import type { Fragrance } from "@/lib/types";
 
 const STAR_LABELS: Record<number, string> = {
