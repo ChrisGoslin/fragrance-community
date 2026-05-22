@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
 // Library page — your personal fragrance journal.
 // Requires login. Reads/writes to the `fragrances` table in Supabase.
 // Supabase Row Level Security ensures you only see your own entries.
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
 const supabase = createClient();
-import type { Fragrance } from "@/lib/types";
+import type { Fragrance } from '@/lib/types';
 
 const STAR_LABELS: Record<number, string> = {
-  1: "Weak",
-  2: "Fair",
-  3: "Good",
-  4: "Great",
-  5: "Outstanding",
+  1: 'Weak',
+  2: 'Fair',
+  3: 'Good',
+  4: 'Great',
+  5: 'Outstanding',
 };
 
 export default function LibraryPage() {
@@ -28,9 +28,9 @@ export default function LibraryPage() {
   const [listError, setListError] = useState<string | null>(null);
 
   // ── Add-fragrance form ─────────────────────────────────────────────────────
-  const [name, setName] = useState("");
-  const [brand, setBrand] = useState("");
-  const [notes, setNotes] = useState("");
+  const [name, setName] = useState('');
+  const [brand, setBrand] = useState('');
+  const [notes, setNotes] = useState('');
   const [rating, setRating] = useState(3);
   const [isPublic, setIsPublic] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -62,9 +62,10 @@ export default function LibraryPage() {
     setListError(null);
 
     const { data, error } = await supabase
-      .from("fragrances")
-      .select("id, user_id, name, brand, notes, rating, is_public, created_at")
-      .order("created_at", { ascending: false });
+      .from('fragrances')
+      .select('id, user_id, name, brand, notes, rating, is_public, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
     if (error) {
       // Supabase returns an error object — show the message so the user
@@ -74,7 +75,7 @@ export default function LibraryPage() {
       setFragrances(data ?? []);
     }
     setListLoading(false);
-  }, []);
+  }, [userId]);
 
   // ── Load fragrances once we know the user is logged in ────────────────────
   // The rule below flags this as a synchronous setState-in-effect, but
@@ -94,7 +95,7 @@ export default function LibraryPage() {
     setFormError(null);
 
     const { data: inserted, error } = await supabase
-      .from("fragrances")
+      .from('fragrances')
       .insert({
         user_id: userId,
         name: name.trim(),
@@ -112,9 +113,9 @@ export default function LibraryPage() {
       // Prepend the new item locally — no need for a round-trip to re-fetch
       // the whole list just to get the row we just inserted.
       setFragrances((prev) => [inserted as Fragrance, ...prev]);
-      setName("");
-      setBrand("");
-      setNotes("");
+      setName('');
+      setBrand('');
+      setNotes('');
       setRating(3);
     }
     setSaving(false);
@@ -126,7 +127,7 @@ export default function LibraryPage() {
     const deleted = fragrances.find((f) => f.id === id);
     setFragrances((prev) => prev.filter((f) => f.id !== id));
 
-    const { error } = await supabase.from("fragrances").delete().eq("id", id);
+    const { error } = await supabase.from('fragrances').delete().eq('id', id);
 
     if (error) {
       // Re-insert only the failed item so overlapping deletes don't clobber
@@ -140,7 +141,7 @@ export default function LibraryPage() {
   if (authLoading) {
     return (
       <main>
-        <p style={{ color: "#888" }}>Loading…</p>
+        <p style={{ color: '#888' }}>Loading…</p>
       </main>
     );
   }
@@ -151,10 +152,10 @@ export default function LibraryPage() {
       <main>
         <h1>Library</h1>
         <p>
-          Your fragrance journal lives here.{" "}
-          <a href="/login" style={{ color: "#222", fontWeight: 600 }}>
+          Your fragrance journal lives here.{' '}
+          <a href="/login" style={{ color: '#222', fontWeight: 600 }}>
             Log in
-          </a>{" "}
+          </a>{' '}
           to start adding scents.
         </p>
       </main>
@@ -174,7 +175,7 @@ export default function LibraryPage() {
         style={{
           marginTop: 24,
           padding: 20,
-          border: "1px solid #ddd",
+          border: '1px solid #ddd',
           borderRadius: 10,
         }}
       >
@@ -184,7 +185,7 @@ export default function LibraryPage() {
           {/* Name */}
           <div style={{ marginBottom: 12 }}>
             <label style={labelStyle}>
-              Name <span style={{ color: "red" }}>*</span>
+              Name <span style={{ color: 'red' }}>*</span>
             </label>
             <input
               type="text"
@@ -219,7 +220,7 @@ export default function LibraryPage() {
               max={5}
               value={rating}
               onChange={(e) => setRating(Number(e.target.value))}
-              style={{ width: "100%" }}
+              style={{ width: '100%' }}
             />
           </div>
 
@@ -231,64 +232,60 @@ export default function LibraryPage() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              style={{ ...inputStyle, resize: "vertical" }}
+              style={{ ...inputStyle, resize: 'vertical' }}
             />
           </div>
 
           {/* Public toggle */}
-          <div style={{ marginBottom: 16, display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
             <input
               type="checkbox"
               id="isPublic"
               checked={isPublic}
               onChange={(e) => setIsPublic(e.target.checked)}
             />
-            <label htmlFor="isPublic" style={{ fontSize: 14, cursor: "pointer" }}>
+            <label htmlFor="isPublic" style={{ fontSize: 14, cursor: 'pointer' }}>
               Share on Community feed
             </label>
           </div>
 
           {formError && (
-            <p style={{ color: "red", fontSize: 14, marginBottom: 12 }}>
-              ⚠ {formError}
-            </p>
+            <p style={{ color: 'red', fontSize: 14, marginBottom: 12 }}>⚠ {formError}</p>
           )}
 
           <button
             type="submit"
             disabled={saving}
             style={{
-              padding: "9px 20px",
-              background: "#222",
-              color: "#fff",
-              border: "none",
+              padding: '9px 20px',
+              background: '#222',
+              color: '#fff',
+              border: 'none',
               borderRadius: 6,
-              cursor: saving ? "not-allowed" : "pointer",
+              cursor: saving ? 'not-allowed' : 'pointer',
               opacity: saving ? 0.6 : 1,
             }}
           >
-            {saving ? "Saving…" : "Add to library"}
+            {saving ? 'Saving…' : 'Add to library'}
           </button>
         </form>
       </section>
 
       {/* ── Fragrance list ── */}
       <section style={{ marginTop: 32 }}>
-        <h2 style={{ fontSize: 18, marginBottom: 12 }}>
-          Your collection ({fragrances.length})
-        </h2>
+        <h2 style={{ fontSize: 18, marginBottom: 12 }}>Your collection ({fragrances.length})</h2>
 
         {/* Surface any list errors prominently */}
         {listError && (
           <div
             style={{
-              padding: "12px 16px",
-              background: "#fff3f3",
-              border: "1px solid #ffcccc",
+              padding: '12px 16px',
+              background: '#fff3f3',
+              border: '1px solid #ffcccc',
               borderRadius: 8,
               marginBottom: 16,
               fontSize: 14,
-              color: "#c00",
+              color: '#c00',
             }}
           >
             <strong>Something went wrong:</strong> {listError}
@@ -297,12 +294,12 @@ export default function LibraryPage() {
               style={{
                 marginLeft: 12,
                 fontSize: 13,
-                cursor: "pointer",
-                background: "none",
-                border: "1px solid #c00",
+                cursor: 'pointer',
+                background: 'none',
+                border: '1px solid #c00',
                 borderRadius: 4,
-                color: "#c00",
-                padding: "2px 8px",
+                color: '#c00',
+                padding: '2px 8px',
               }}
             >
               Retry
@@ -311,23 +308,21 @@ export default function LibraryPage() {
         )}
 
         {listLoading ? (
-          <p style={{ color: "#888" }}>Loading…</p>
+          <p style={{ color: '#888' }}>Loading…</p>
         ) : fragrances.length === 0 && !listError ? (
-          <p style={{ opacity: 0.6 }}>
-            Nothing here yet. Add your first fragrance above!
-          </p>
+          <p style={{ opacity: 0.6 }}>Nothing here yet. Add your first fragrance above!</p>
         ) : (
-          <div style={{ display: "grid", gap: 12 }}>
+          <div style={{ display: 'grid', gap: 12 }}>
             {fragrances.map((f) => (
               <div
                 key={f.id}
                 style={{
-                  padding: "16px 20px",
-                  border: "1px solid #e5e5e5",
+                  padding: '16px 20px',
+                  border: '1px solid #e5e5e5',
                   borderRadius: 10,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
                   gap: 16,
                 }}
               >
@@ -335,19 +330,15 @@ export default function LibraryPage() {
                   {/* Name + brand */}
                   <p style={{ margin: 0, fontWeight: 600 }}>{f.name}</p>
                   {f.brand && (
-                    <p style={{ margin: "2px 0 0", fontSize: 13, color: "#666" }}>
-                      {f.brand}
-                    </p>
+                    <p style={{ margin: '2px 0 0', fontSize: 13, color: '#666' }}>{f.brand}</p>
                   )}
 
                   {/* Rating */}
                   {f.rating && (
-                    <p style={{ margin: "6px 0 0", fontSize: 14 }}>
-                      {"★".repeat(f.rating)}
-                      {"☆".repeat(5 - f.rating)}{" "}
-                      <span style={{ color: "#888", fontSize: 12 }}>
-                        {STAR_LABELS[f.rating]}
-                      </span>
+                    <p style={{ margin: '6px 0 0', fontSize: 14 }}>
+                      {'★'.repeat(f.rating)}
+                      {'☆'.repeat(5 - f.rating)}{' '}
+                      <span style={{ color: '#888', fontSize: 12 }}>{STAR_LABELS[f.rating]}</span>
                     </p>
                   )}
 
@@ -355,10 +346,10 @@ export default function LibraryPage() {
                   {f.notes && (
                     <p
                       style={{
-                        margin: "6px 0 0",
+                        margin: '6px 0 0',
                         fontSize: 14,
-                        color: "#444",
-                        whiteSpace: "pre-wrap",
+                        color: '#444',
+                        whiteSpace: 'pre-wrap',
                       }}
                     >
                       {f.notes}
@@ -368,16 +359,16 @@ export default function LibraryPage() {
                   {/* Public/private badge */}
                   <span
                     style={{
-                      display: "inline-block",
+                      display: 'inline-block',
                       marginTop: 8,
                       fontSize: 11,
-                      padding: "2px 7px",
+                      padding: '2px 7px',
                       borderRadius: 4,
-                      background: f.is_public ? "#e8f5e9" : "#f5f5f5",
-                      color: f.is_public ? "#2e7d32" : "#888",
+                      background: f.is_public ? '#e8f5e9' : '#f5f5f5',
+                      color: f.is_public ? '#2e7d32' : '#888',
                     }}
                   >
-                    {f.is_public ? "Public" : "Private"}
+                    {f.is_public ? 'Public' : 'Private'}
                   </span>
                 </div>
 
@@ -386,11 +377,11 @@ export default function LibraryPage() {
                   onClick={() => handleDelete(f.id)}
                   title="Remove from library"
                   style={{
-                    background: "none",
-                    border: "none",
-                    color: "#bbb",
+                    background: 'none',
+                    border: 'none',
+                    color: '#bbb',
                     fontSize: 20,
-                    cursor: "pointer",
+                    cursor: 'pointer',
                     lineHeight: 1,
                     flexShrink: 0,
                   }}
@@ -408,18 +399,18 @@ export default function LibraryPage() {
 
 // Shared inline styles (keeps the JSX above readable)
 const labelStyle: React.CSSProperties = {
-  display: "block",
+  display: 'block',
   fontSize: 13,
   fontWeight: 600,
   marginBottom: 4,
-  color: "#333",
+  color: '#333',
 };
 
 const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "8px 12px",
-  border: "1px solid #ddd",
+  width: '100%',
+  padding: '8px 12px',
+  border: '1px solid #ddd',
   borderRadius: 6,
   fontSize: 14,
-  boxSizing: "border-box",
+  boxSizing: 'border-box',
 };
