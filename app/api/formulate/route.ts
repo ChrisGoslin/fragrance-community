@@ -194,10 +194,24 @@ export async function POST(req: Request) {
       occasion: 'casual',
     };
 
+    // Prompt caching: the system prompt is large and identical on every call.
+    // Passing it as a content block with cache_control tells Anthropic to cache it
+    // server-side for 5 minutes. Cached tokens cost ~10% of normal input price,
+    // saving ~90% on the system prompt portion for repeated requests.
+    //
+    // Note: Haiku 4.5 requires a minimum of 4,096 tokens before caching activates.
+    // As the system prompt grows (more accord families, scoring rules, etc.)
+    // caching will kick in automatically — no code changes needed.
     const message = await client.messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      system: [
+        {
+          type: 'text',
+          text: SYSTEM_PROMPT,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
       messages: [
         {
           role: 'user',
@@ -225,6 +239,8 @@ export async function POST(req: Request) {
       success: true,
       result,
       tokens_used: message.usage.input_tokens + message.usage.output_tokens,
+      cache_read_tokens: message.usage.cache_read_input_tokens ?? 0,
+      cache_created_tokens: message.usage.cache_creation_input_tokens ?? 0,
     });
   } catch (error) {
     console.error('Formulate route error:', error);
