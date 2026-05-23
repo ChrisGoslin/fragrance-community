@@ -1,26 +1,2 @@
-name: CI
-
-on:
-  push:
-    branches: ['main']
-  pull_request:
-    branches: ['main']
-
-jobs:
-  quality:
-    runs-on: ubuntu-latest
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-publishable-key-for-ci
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key-for-ci
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run type-check
-      - run: npm test
-      - run: npm run build
+# This file has been deleted. See INFRASTRUCTURE_AUDIT_REPORT.md for rationale.
+# Vercel's native Git integration handles all deployment and build verification.

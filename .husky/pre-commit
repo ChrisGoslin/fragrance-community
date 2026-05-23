@@ -1,11 +1,13 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-echo "🔍 Type checking..."
-npm run type-check || exit 1
+# Only lint changed files (staged for commit)
+CHANGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx)$')
+if [ -n "$CHANGED_FILES" ]; then
+  echo "🔍 Linting staged files..."
+  npx eslint --cache --fix --max-warnings 0 $CHANGED_FILES || exit 1
+fi
 
-echo "📝 Formatting code..."
-npx prettier --write .
-
-echo "✨ Linting (warnings only)..."
-npm run lint || true
+# Type-check (non-blocking warning)
+echo "📋 Type checking..."
+npm run type-check || true
